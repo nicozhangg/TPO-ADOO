@@ -1,0 +1,50 @@
+{
+  "700f3d3f-2800-42be-aeb5-a54093970b82": {
+    "id": "700f3d3f-2800-42be-aeb5-a54093970b82",
+    "juego": "Valorant",
+    "emailCreador": "a@a.com",
+    "emailRival": "b@b.com",
+    "rangoMin": 500,
+    "rangoMax": 800,
+    "cupo": 6,
+    "estado": "BUSCANDO_JUGADORES",
+    "inicio": "2025-10-28T20:00",
+    "fin": "2025-10-29T00:00",
+    "jugadores": [
+      "a@a.com",
+      "b@b.com",
+      "c@c.com",
+      "d@d.com"
+    ],
+    "confirmaciones": {
+      "a@a.com": false,
+      "b@b.com": false,
+      "c@c.com": false,
+      "d@d.com": false
+    },
+    "estadisticas": [],
+    "listaEspera": []
+  },
+  "907cc4c6-6f21-4110-b8e8-ba5324e7f652": {
+    "id": "907cc4c6-6f21-4110-b8e8-ba5324e7f652",
+    "juego": "CS",
+    "emailCreador": "a@a.com",
+    "emailRival": "b@b.com",
+    "rangoMin": 100,
+    "rangoMax": 500,
+    "cupo": 2,
+    "estado": "FINALIZADO",
+    "inicio": "2025-02-11T18:42",
+    "fin": "2025-02-11T19:50",
+    "jugadores": [
+      "a@a.com",
+      "b@b.com"
+    ],
+    "confirmaciones": {
+      "a@a.com": true,
+      "b@b.com": true
+    },
+    "estadisticas": [],
+    "listaEspera": []
+  }
+}

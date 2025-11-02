@@ -1,0 +1,30 @@
+{
+  "a@a.com": {
+    "email": "a@a.com",
+    "nickname": "a",
+    "mmr": 100,
+    "latenciaMs": 5,
+    "rol": "ORGANIZER"
+  },
+  "b@b.com": {
+    "email": "b@b.com",
+    "nickname": "b",
+    "mmr": 150,
+    "latenciaMs": 7,
+    "rol": "PLAYER"
+  },
+  "c@c.com": {
+    "email": "c@c.com",
+    "nickname": "c",
+    "mmr": 150,
+    "latenciaMs": 7,
+    "rol": "PLAYER"
+  },
+  "d@d.com": {
+    "email": "d@d.com",
+    "nickname": "d",
+    "mmr": 200,
+    "latenciaMs": 150,
+    "rol": "PLAYER"
+  }
+}
