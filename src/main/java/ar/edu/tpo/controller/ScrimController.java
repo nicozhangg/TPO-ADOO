@@ -2,21 +2,27 @@ package ar.edu.tpo.controller;
 
 import ar.edu.tpo.domain.Rol;
 import ar.edu.tpo.service.ArgentinaTimeZone;
-import ar.edu.tpo.service.ScrimService;
+import ar.edu.tpo.service.scrim.ScrimCicloDeVidaService;
+import ar.edu.tpo.service.scrim.ScrimLobbyService;
+import ar.edu.tpo.service.scrim.ScrimStatsService;
 import ar.edu.tpo.service.UsuarioActualPort;
-import ar.edu.tpo.service.UsuarioService;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
 public class ScrimController {
-    private final ScrimService service;
-    private final UsuarioService usuarios;
+    private final ScrimCicloDeVidaService lifecycleService;
+    private final ScrimLobbyService lobbyService;
+    private final ScrimStatsService statsService;
     private final UsuarioActualPort usuarioActual;
 
-    public ScrimController(ScrimService s, UsuarioService u, UsuarioActualPort usuarioActual){
-        this.service = s;
-        this.usuarios = u;
+    public ScrimController(ScrimCicloDeVidaService lifecycleService,
+                           ScrimLobbyService lobbyService,
+                           ScrimStatsService statsService,
+                           UsuarioActualPort usuarioActual){
+        this.lifecycleService = lifecycleService;
+        this.lobbyService = lobbyService;
+        this.statsService = statsService;
         this.usuarioActual = usuarioActual;
     }
 
@@ -40,7 +46,7 @@ public class ScrimController {
     /** Compat (cupo=2, sin fechas, valores por defecto) */
     public void crear(String juego, String emailCreador, String emailRival, int rangoMin, int rangoMax){
         validarPermisoOrganizer();
-        var s = service.crearScrim(juego, emailCreador, emailRival, rangoMin, rangoMax,
+        var s = lifecycleService.crearScrim(juego, emailCreador, emailRival, rangoMin, rangoMax,
                 2, "2v2", "REGION_DESCONOCIDA", 100, "casual", null, null);
         System.out.println("Scrim creado: " + s.getId());
     }
@@ -56,7 +62,7 @@ public class ScrimController {
         ZonedDateTime finZoned = ArgentinaTimeZone.parsear(finStr);
         LocalDateTime ini = (iniZoned != null) ? ArgentinaTimeZone.aLocalDateTime(iniZoned) : null;
         LocalDateTime fin = (finZoned != null) ? ArgentinaTimeZone.aLocalDateTime(finZoned) : null;
-        var s = service.crearScrim(juego, emailCreador, emailRival,
+        var s = lifecycleService.crearScrim(juego, emailCreador, emailRival,
                 rangoMin, rangoMax, cupo,
                 formato, region, latenciaMaxMs,
                 modalidad,
@@ -67,7 +73,7 @@ public class ScrimController {
     // ================== LISTAR ==================
     public void listar(){ 
         // Permitido para todos los usuarios (PLAYER y ORGANIZER)
-        service.listarScrims().forEach(System.out::println); 
+        lifecycleService.listarScrims().forEach(System.out::println);
     }
 
     // ================== LOBBY ===================
@@ -87,8 +93,7 @@ public class ScrimController {
             validarPermisoOrganizer();
         }
         
-        usuarios.buscar(emailJugador); // valida existencia
-        service.unirse(idScrim, emailJugador); // Determina equipo automáticamente
+        lobbyService.unirse(idScrim, emailJugador); // Determina equipo automáticamente
         System.out.println("Jugador unido.");
     }
     
@@ -108,25 +113,23 @@ public class ScrimController {
             validarPermisoOrganizer();
         }
         
-        usuarios.buscar(emailJugador); // valida existencia
-        service.unirseAEquipo(idScrim, emailJugador, nombreEquipo);
+        lobbyService.unirseAEquipo(idScrim, emailJugador, nombreEquipo);
         System.out.println("Jugador unido al equipo.");
     }
     public void salir(String idScrim, String emailJugador){
         validarPermisoOrganizer();
-        service.salir(idScrim, emailJugador);
+        lobbyService.salir(idScrim, emailJugador);
         System.out.println("Jugador quitado.");
     }
     public void confirmar(String idScrim, String emailJugador){
         validarPermisoOrganizer();
-        usuarios.buscar(emailJugador);
-        service.confirmar(idScrim, emailJugador);
+        lobbyService.confirmarJugador(idScrim, emailJugador);
         System.out.println("Equipo confirmado.");
     }
     
     public void confirmarEquipo(String idScrim, String nombreEquipo){
         validarPermisoOrganizer();
-        service.confirmarEquipo(idScrim, nombreEquipo);
+        lobbyService.confirmarEquipo(idScrim, nombreEquipo);
         System.out.println("Equipo confirmado.");
     }
 
@@ -138,41 +141,39 @@ public class ScrimController {
         ZonedDateTime finZoned = ArgentinaTimeZone.parsear(finStr);
         LocalDateTime ini = ArgentinaTimeZone.aLocalDateTime(iniZoned);
         LocalDateTime fin = ArgentinaTimeZone.aLocalDateTime(finZoned);
-        service.programar(idScrim, ini, fin);
+        lifecycleService.programar(idScrim, ini, fin);
         System.out.println("Scrim programado/reprogramado.");
     }
     public void limpiarAgenda(String idScrim){
         validarPermisoOrganizer();
-        service.limpiarAgenda(idScrim);
+        lifecycleService.limpiarAgenda(idScrim);
         System.out.println("Agenda limpiada.");
     }
     public void iniciar(String idScrim){
         validarPermisoOrganizer();
-        service.iniciarScrim(idScrim);
+        lifecycleService.iniciarScrim(idScrim);
         System.out.println("Scrim en juego.");
     }
     public void finalizar(String idScrim){
         validarPermisoOrganizer();
-        service.finalizarScrim(idScrim);
+        lifecycleService.finalizarScrim(idScrim);
         System.out.println("Scrim finalizado.");
     }
     public void cancelar(String idScrim){
         validarPermisoOrganizer();
-        service.cancelarScrim(idScrim);
+        lifecycleService.cancelarScrim(idScrim);
         System.out.println("Scrim cancelado.");
     }
 
     // ================== RESULTADOS / SUPLENTES ==================
     public void cargarResultado(String idScrim, String emailJugador, int kills, int assists, int deaths, double rating){
         validarPermisoOrganizer();
-        usuarios.buscar(emailJugador);
-        service.cargarResultado(idScrim, emailJugador, kills, assists, deaths, rating);
+        statsService.cargarResultado(idScrim, emailJugador, kills, assists, deaths, rating);
         System.out.println("Resultado cargado.");
     }
     public void agregarSuplente(String idScrim, String emailJugador){
         validarPermisoOrganizer();
-        usuarios.buscar(emailJugador);
-        service.agregarSuplente(idScrim, emailJugador);
+        lobbyService.agregarSuplente(idScrim, emailJugador);
         System.out.println("Suplente agregado.");
     }
 }

@@ -5,8 +5,12 @@ import ar.edu.tpo.domain.Rol;
 import ar.edu.tpo.domain.Usuario;
 import ar.edu.tpo.repository.JsonScrimRepository;
 import ar.edu.tpo.repository.JsonUsuarioRepository;
-import ar.edu.tpo.service.*;
-import ar.edu.tpo.service.estrategias.EstrategiaPorMMR;
+import ar.edu.tpo.service.MockUsuarioActualPort;
+import ar.edu.tpo.service.UsuarioService;
+import ar.edu.tpo.service.scrim.ScrimCicloDeVidaService;
+import ar.edu.tpo.service.scrim.ScrimLobbyService;
+import ar.edu.tpo.service.scrim.ScrimSchedulerService;
+import ar.edu.tpo.service.scrim.ScrimStatsService;
 
 import java.util.Scanner;
 
@@ -22,19 +26,15 @@ public class Main {
         JsonUsuarioRepository usuarioRepo = new JsonUsuarioRepository("data/usuarios.json");
         
         usuarioService = new UsuarioService(usuarioRepo);
-        ConductaService conductaService = new ConductaService();
-        ScrimService scrimService = new ScrimService(
-            scrimRepo, 
-            usuarioService, 
-            new EstrategiaPorMMR(), 
-            conductaService
-        );
+        ScrimCicloDeVidaService scrimLifecycleService = new ScrimCicloDeVidaService(scrimRepo, usuarioService);
+        ScrimLobbyService scrimLobbyService = new ScrimLobbyService(scrimRepo, usuarioService);
+        ScrimStatsService scrimStatsService = new ScrimStatsService(scrimRepo, usuarioService);
         
         usuarioActual = new MockUsuarioActualPort();
-        scrimController = new ScrimController(scrimService, usuarioService, usuarioActual);
+        scrimController = new ScrimController(scrimLifecycleService, scrimLobbyService, scrimStatsService, usuarioActual);
 
         // Iniciar scheduler para transiciones automáticas (revisa cada 30 segundos)
-        ScrimSchedulerService schedulerService = ScrimSchedulerService.getInstance(scrimRepo, scrimService);
+        ScrimSchedulerService schedulerService = ScrimSchedulerService.getInstance(scrimRepo, scrimLifecycleService);
         schedulerService.iniciar(30);
 
         // Agregar shutdown hook para detener el scheduler al cerrar la aplicación

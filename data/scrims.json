@@ -7,6 +7,10 @@
     "rangoMin": 500,
     "rangoMax": 800,
     "cupo": 6,
+    "formato": "6v6",
+    "region": "REGION_DESCONOCIDA",
+    "latenciaMaxMs": 100,
+    "modalidad": "casual",
     "estado": "BUSCANDO_JUGADORES",
     "inicio": "2025-10-28T20:00",
     "fin": "2025-10-29T00:00",
@@ -53,26 +57,34 @@
     "rangoMin": 100,
     "rangoMax": 500,
     "cupo": 2,
+    "formato": "2v2",
+    "region": "REGION_DESCONOCIDA",
+    "latenciaMaxMs": 100,
+    "modalidad": "casual",
     "estado": "EN_JUEGO",
-    "inicio": "2025-11-02T19:04",
-    "fin": "2025-11-02T20:50",
+    "inicio": "2025-11-08T17:46",
+    "fin": "2025-11-08T20:50",
     "equipo1": {
       "nombre": "Equipo a@a.com",
       "capitan": "a@a.com",
       "jugadores": [
-        "a@a.com"
+        "a@a.com",
+        "c@c.com"
       ]
     },
     "equipo2": {
       "nombre": "Equipo b@b.com",
       "capitan": "b@b.com",
       "jugadores": [
-        "b@b.com"
+        "b@b.com",
+        "d@d.com"
       ]
     },
     "jugadores": [
       "a@a.com",
-      "b@b.com"
+      "c@c.com",
+      "b@b.com",
+      "d@d.com"
     ],
     "confirmacionesEquipos": {
       "Equipo a@a.com": true,
@@ -80,7 +92,9 @@
     },
     "confirmaciones": {
       "a@a.com": true,
-      "b@b.com": true
+      "c@c.com": true,
+      "b@b.com": true,
+      "d@d.com": true
     },
     "estadisticas": [],
     "listaEspera": []
@@ -93,6 +107,10 @@
     "rangoMin": 190,
     "rangoMax": 199,
     "cupo": 3,
+    "formato": "3v3",
+    "region": "REGION_DESCONOCIDA",
+    "latenciaMaxMs": 100,
+    "modalidad": "casual",
     "estado": "BUSCANDO_JUGADORES",
     "inicio": "2025-04-11T19:30",
     "fin": "2025-04-11T23:30",

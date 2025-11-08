@@ -1,6 +1,7 @@
 package ar.edu.tpo.repository;
 
 import ar.edu.tpo.domain.Scrim;
+import ar.edu.tpo.repository.json.ScrimJsonAdapter;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 
@@ -19,7 +20,7 @@ public class JsonScrimRepository implements ScrimRepository {
         this.ruta = rutaArchivo;
         this.gson = new GsonBuilder()
                 .setPrettyPrinting()
-                .registerTypeAdapter(Scrim.class, new ar.edu.tpo.domain.Scrim.JsonAdapter())
+                .registerTypeAdapter(Scrim.class, new ScrimJsonAdapter())
                 .create();
         this.cache = cargarDesdeDisco();
     }

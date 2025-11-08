@@ -1,7 +1,9 @@
-package ar.edu.tpo.service;
+package ar.edu.tpo.service.scrim;
 
-import ar.edu.tpo.domain.*;
+import ar.edu.tpo.domain.EstadoScrim;
+import ar.edu.tpo.domain.Scrim;
 import ar.edu.tpo.repository.ScrimRepository;
+import ar.edu.tpo.service.ArgentinaTimeZone;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -17,26 +19,26 @@ public class ScrimSchedulerService {
     private static volatile ScrimSchedulerService instancia;
 
     private final ScrimRepository repo;
-    private final ScrimService scrimService;
+    private final ScrimCicloDeVidaService lifecycleService;
     private ScheduledExecutorService scheduler;
     private boolean activo = false;
 
-    private ScrimSchedulerService(ScrimRepository repo, ScrimService scrimService) {
+    private ScrimSchedulerService(ScrimRepository repo, ScrimCicloDeVidaService lifecycleService) {
         this.repo = repo;
-        this.scrimService = scrimService;
+        this.lifecycleService = lifecycleService;
     }
 
     /**
      * Obtiene la instancia única del scheduler. Si aún no existe, la crea.
      * @param repo repositorio de scrims
-     * @param scrimService servicio de scrims
+     * @param lifecycleService servicio de ciclo de vida de scrims
      * @return instancia única del servicio de scheduler
      */
-    public static ScrimSchedulerService getInstance(ScrimRepository repo, ScrimService scrimService) {
+    public static ScrimSchedulerService getInstance(ScrimRepository repo, ScrimCicloDeVidaService lifecycleService) {
         if (instancia == null) {
             synchronized (ScrimSchedulerService.class) {
                 if (instancia == null) {
-                    instancia = new ScrimSchedulerService(repo, scrimService);
+                    instancia = new ScrimSchedulerService(repo, lifecycleService);
                 }
             }
         }
@@ -119,7 +121,7 @@ public class ScrimSchedulerService {
                         
                         if (ahoraTruncado.isAfter(inicioTruncado) || ahoraTruncado.isEqual(inicioTruncado)) {
                             try {
-                                scrimService.iniciarScrim(scrim.getId());
+                                lifecycleService.iniciarScrim(scrim.getId());
                                 System.out.println("[scheduler] Scrim iniciado automáticamente: " + scrim.getId() + 
                                     " (inicio programado: " + inicioTruncado + ", hora actual: " + ahoraTruncado + ")");
                             } catch (Exception e) {
