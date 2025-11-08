@@ -230,10 +230,10 @@ public class Main {
                 System.out.print("ID del scrim: ");
                 idScrim = scanner.nextLine().trim();
                 System.out.print("Fecha inicio (yyyy-MM-dd HH:mm, hora Argentina): ");
-                String inicioStr = scanner.nextLine().trim();
+                String inicio = scanner.nextLine().trim();
                 System.out.print("Fecha fin (yyyy-MM-dd HH:mm, hora Argentina): ");
-                String finStr = scanner.nextLine().trim();
-                scrimController.programar(idScrim, inicioStr, finStr);
+                String fin = scanner.nextLine().trim();
+                scrimController.programar(idScrim, inicio, fin);
                 break;
             case 7:
                 // Limpiar Agenda
