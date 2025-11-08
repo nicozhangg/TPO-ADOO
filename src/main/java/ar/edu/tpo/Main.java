@@ -1,34 +1,37 @@
 package ar.edu.tpo;
 
-import ar.edu.tpo.controller.*;
-import ar.edu.tpo.repository.*;
+import ar.edu.tpo.controller.ScrimController;
+import ar.edu.tpo.domain.Rol;
+import ar.edu.tpo.domain.Usuario;
+import ar.edu.tpo.repository.JsonScrimRepository;
+import ar.edu.tpo.repository.JsonUsuarioRepository;
 import ar.edu.tpo.service.*;
-import ar.edu.tpo.service.estrategias.*;
+import ar.edu.tpo.service.estrategias.EstrategiaPorMMR;
 
 import java.util.Scanner;
 
 public class Main {
+    private static Scanner scanner = new Scanner(System.in);
+    private static MockUsuarioActualPort usuarioActual;
+    private static ScrimController scrimController;
+    private static UsuarioService usuarioService;
+
     public static void main(String[] args) {
-        // Wiring (manual)
-        ScrimRepository scrimRepo = new JsonScrimRepository("data/scrims.json");
-        UsuarioRepository usuarioRepo = new JsonUsuarioRepository("data/usuarios.json");
-
-        UsuarioService usuarioService = new UsuarioService(usuarioRepo);
+        // Inicializar repositorios y servicios
+        JsonScrimRepository scrimRepo = new JsonScrimRepository("data/scrims.json");
+        JsonUsuarioRepository usuarioRepo = new JsonUsuarioRepository("data/usuarios.json");
+        
+        usuarioService = new UsuarioService(usuarioRepo);
         ConductaService conductaService = new ConductaService();
-
-        EstrategiaEmparejamiento estrategia = new EstrategiaPorMMR();
-        ScrimService scrimService = new ScrimService(scrimRepo, usuarioService, estrategia, conductaService);
-
-        // Implementación temporal del puerto de usuario actual
-        // En producción, este será proporcionado por el módulo de login/usuario
-        MockUsuarioActualPort usuarioActualPort = new MockUsuarioActualPort();
-        // Por defecto, establecer como ORGANIZER (a@a.com) para mantener compatibilidad
-        // TODO: El módulo de login deberá proporcionar la implementación real de UsuarioActualPort
-        usuarioActualPort.establecerUsuarioActual("a@a.com", ar.edu.tpo.domain.Rol.ORGANIZER);
-
-        UsuarioController usuarioController = new UsuarioController(usuarioService);
-        ScrimController scrimController = new ScrimController(scrimService, usuarioService, usuarioActualPort);
-        ConductaController conductaController = new ConductaController(conductaService);
+        ScrimService scrimService = new ScrimService(
+            scrimRepo, 
+            usuarioService, 
+            new EstrategiaPorMMR(), 
+            conductaService
+        );
+        
+        usuarioActual = new MockUsuarioActualPort();
+        scrimController = new ScrimController(scrimService, usuarioService, usuarioActual);
 
         // Iniciar scheduler para transiciones automáticas (revisa cada 30 segundos)
         ScrimSchedulerService schedulerService = new ScrimSchedulerService(scrimRepo, scrimService);
@@ -40,199 +43,274 @@ public class Main {
             schedulerService.detener();
         }));
 
-        Scanner sc = new Scanner(System.in);
-        boolean seguir = true;
-
-        while (seguir) {
-            System.out.println("==============================");
-            System.out.println("       SISTEMA DE SCRIMS");
-            System.out.println("==============================");
-            System.out.println("1) Usuarios");
-            System.out.println("2) Scrims");
-            System.out.println("3) Conducta");
-            System.out.println("4) Estrategia de emparejamiento");
-            System.out.println("0) Salir");
-            System.out.print("> ");
-            String op = sc.nextLine().trim();
-
-            try {
-                switch (op) {
-                    case "1" -> usuarioMenu(usuarioController, sc);
-                    case "2" -> scrimMenu(scrimController, sc);
-                    case "3" -> conductaMenu(conductaController, sc);
-                    case "4" -> estrategiaMenu(scrimService, sc);
-                    case "0" -> seguir = false;
-                    default -> System.out.println("Opción inválida.");
+        // Bucle principal
+        boolean salir = false;
+        while (!salir) {
+            if (usuarioActual.obtenerEmailUsuarioActual() == null) {
+                // No hay usuario logueado - mostrar menú de login
+                mostrarMenuLogin();
+                int opcion = leerEntero();
+                switch (opcion) {
+                    case 1:
+                        hacerLogin();
+                        break;
+                    case 2:
+                        salir = true;
+                        System.out.println("¡Hasta luego!");
+                        break;
+                    default:
+                        System.out.println("Opción inválida.");
                 }
-            } catch (Exception e) {
-                System.out.println("⚠ Error: " + e.getMessage());
-            }
-        }
-        System.out.println("¡Chau!");
-    }
-
-    // ===== Usuarios =====
-    private static void usuarioMenu(UsuarioController uc, Scanner sc) {
-        System.out.println("1) Registrar usuario");
-        System.out.println("2) Listar usuarios");
-        System.out.println("3) Buscar usuario por email");
-        System.out.println("0) Volver");
-        System.out.print("> ");
-        String op = sc.nextLine().trim();
-        switch (op) {
-            case "1" -> {
-                System.out.print("Email: "); String email = sc.nextLine();
-                System.out.print("Nickname: "); String nick = sc.nextLine();
-                System.out.print("MMR: "); int mmr = Integer.parseInt(sc.nextLine());
-                System.out.print("Latencia promedio (ms): "); int ping = Integer.parseInt(sc.nextLine());
-                System.out.print("Rol (PLAYER/ORGANIZER): "); String rolStr = sc.nextLine().trim().toUpperCase();
-                ar.edu.tpo.domain.Rol rol;
-                try {
-                    rol = ar.edu.tpo.domain.Rol.valueOf(rolStr);
-                } catch (IllegalArgumentException e) {
-                    System.out.println("Rol inválido. Usando PLAYER por defecto.");
-                    rol = ar.edu.tpo.domain.Rol.PLAYER;
-                }
-                uc.registrar(email, nick, mmr, ping, rol);
-            }
-            case "2" -> uc.listar();
-            case "3" -> {
-                System.out.print("Email: "); String email = sc.nextLine();
-                uc.buscar(email);
-            }
-            case "0" -> { return; }
-            default -> System.out.println("Opción inválida.");
-        }
-    }
-
-    // ===== Scrims (nuevo flujo con cupo/lobby/confirmaciones) =====
-    private static void scrimMenu(ScrimController scCtrl, Scanner sc) {
-        System.out.println("1) Crear scrim (cupo + fechas opcionales)");
-        System.out.println("2) Listar scrims");
-        System.out.println("3) Unirse a scrim");
-        System.out.println("4) Quitar jugador");
-        System.out.println("5) Confirmar jugador");
-        System.out.println("6) Programar/Reprogramar fechas");
-        System.out.println("7) Iniciar scrim (CONFIRMADO → EN_JUEGO)");
-        System.out.println("8) Finalizar scrim (EN_JUEGO → FINALIZADO)");
-        System.out.println("9) Cancelar scrim");
-        System.out.println("10) Cargar resultado (K/A/D + rating)");
-        System.out.println("11) Agregar suplente (lista de espera)");
-        System.out.println("0) Volver");
-        System.out.print("> ");
-        String op = sc.nextLine().trim();
-
-        switch (op) {
-            case "1" -> {
-                System.out.print("Juego: "); String juego = sc.nextLine();
-                System.out.print("Creador (email): "); String creador = sc.nextLine();
-                System.out.print("Rival (email): "); String rival = sc.nextLine();
-                System.out.print("Rango mínimo MMR: "); int min = Integer.parseInt(sc.nextLine());
-                System.out.print("Rango máximo MMR: "); int max = Integer.parseInt(sc.nextLine());
-                System.out.print("Jugadores por equipo (p.ej. 5 para 5v5): "); int cupo = Integer.parseInt(sc.nextLine());
-                System.out.print("Inicio (yyyy-MM-dd HH:mm, hora Argentina) o vacío: "); String inicio = sc.nextLine();
-                System.out.print("Fin    (yyyy-MM-dd HH:mm, hora Argentina) o vacío: "); String fin = sc.nextLine();
-                scCtrl.crear(juego, creador, rival, min, max, cupo, inicio, fin);
-            }
-            case "2" -> scCtrl.listar();
-            case "3" -> {
-                System.out.print("ID scrim: "); String id = sc.nextLine();
-                System.out.print("Email jugador: "); String email = sc.nextLine();
-                System.out.print("Nombre del equipo (o vacío para auto-asignar): "); String equipo = sc.nextLine().trim();
-                if (equipo.isBlank()) {
-                    scCtrl.unirse(id, email);
+            } else {
+                // Usuario logueado - mostrar menú según rol
+                Rol rol = usuarioActual.obtenerRolUsuarioActual();
+                if (rol == Rol.PLAYER) {
+                    mostrarMenuJugador();
                 } else {
-                    scCtrl.unirseAEquipo(id, email, equipo);
+                    mostrarMenuOrganizer();
                 }
+                int opcion = leerEntero();
+                salir = procesarOpcion(opcion, rol);
             }
-            case "4" -> {
-                System.out.print("ID scrim: "); String id = sc.nextLine();
-                System.out.print("Email jugador: "); String email = sc.nextLine();
-                scCtrl.salir(id, email);
-            }
-            case "5" -> {
-                System.out.print("ID scrim: "); String id = sc.nextLine();
-                System.out.print("Email jugador: "); String email = sc.nextLine();
-                scCtrl.confirmar(id, email);
-            }
-            case "6" -> {
-                System.out.print("ID scrim: "); String id = sc.nextLine();
-                System.out.print("Inicio (yyyy-MM-dd HH:mm, hora Argentina): "); String ini = sc.nextLine();
-                System.out.print("Fin    (yyyy-MM-dd HH:mm, hora Argentina): "); String fin = sc.nextLine();
-                scCtrl.programar(id, ini, fin);
-            }
-            case "7" -> {
-                System.out.print("ID scrim: "); String id = sc.nextLine();
-                scCtrl.iniciar(id);
-            }
-            case "8" -> {
-                System.out.print("ID scrim: "); String id = sc.nextLine();
-                scCtrl.finalizar(id);
-            }
-            case "9" -> {
-                System.out.print("ID scrim: "); String id = sc.nextLine();
-                scCtrl.cancelar(id);
-            }
-            case "10" -> {
-                System.out.print("ID scrim: "); String id = sc.nextLine();
-                System.out.print("Email jugador: "); String email = sc.nextLine();
-                System.out.print("Kills: "); int k = Integer.parseInt(sc.nextLine());
-                System.out.print("Assists: "); int a = Integer.parseInt(sc.nextLine());
-                System.out.print("Deaths: "); int d = Integer.parseInt(sc.nextLine());
-                System.out.print("Rating (0-10): "); double r = Double.parseDouble(sc.nextLine());
-                scCtrl.cargarResultado(id, email, k, a, d, r);
-            }
-            case "11" -> {
-                System.out.print("ID scrim: "); String id = sc.nextLine();
-                System.out.print("Email jugador suplente: "); String email = sc.nextLine();
-                scCtrl.agregarSuplente(id, email);
-            }
-            case "0" -> { return; }
-            default -> System.out.println("Opción inválida.");
+        }
+        scanner.close();
+    }
+
+    private static void mostrarMenuLogin() {
+        System.out.println("\n=== LOGIN ===");
+        System.out.println("1. Iniciar sesión");
+        System.out.println("2. Salir");
+        System.out.print("Seleccione una opción: ");
+    }
+
+    private static void hacerLogin() {
+        System.out.print("Ingrese su email: ");
+        String email = scanner.nextLine().trim();
+        
+        try {
+            Usuario usuario = usuarioService.buscar(email);
+            usuarioActual.establecerUsuarioActual(usuario.getEmail(), usuario.getRol());
+            System.out.println("¡Bienvenido, " + usuario.getNickname() + "! (Rol: " + usuario.getRol() + ")");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
         }
     }
 
-    // ===== Conducta =====
-    private static void conductaMenu(ConductaController cc, Scanner sc){
-        System.out.println("1) Registrar Abandono");
-        System.out.println("2) Registrar NoShow");
-        System.out.println("3) Registrar Strike");
-        System.out.println("4) Registrar Cooldown");
-        System.out.println("5) Ver historial");
-        System.out.println("0) Volver");
-        System.out.print("> ");
-        String op = sc.nextLine().trim();
+    private static void mostrarMenuJugador() {
+        System.out.println("\n=== MENÚ JUGADOR ===");
+        System.out.println("Usuario: " + usuarioActual.obtenerEmailUsuarioActual());
+        System.out.println("1. Listar Scrims");
+        System.out.println("2. Unirse a Scrim");
+        System.out.println("3. Cerrar sesión");
+        System.out.print("Seleccione una opción: ");
+    }
 
-        String email = null;
-        if (!op.equals("5") && !op.equals("0")) {
-            System.out.print("Email del jugador: ");
-            email = sc.nextLine();
-        }
+    private static void mostrarMenuOrganizer() {
+        System.out.println("\n=== MENÚ ORGANIZER ===");
+        System.out.println("Usuario: " + usuarioActual.obtenerEmailUsuarioActual());
+        System.out.println("1. Listar Scrims");
+        System.out.println("2. Crear Scrim");
+        System.out.println("3. Unirse a Scrim");
+        System.out.println("4. Salir de Scrim");
+        System.out.println("5. Confirmar Jugador");
+        System.out.println("6. Programar Scrim");
+        System.out.println("7. Limpiar Agenda");
+        System.out.println("8. Iniciar Scrim");
+        System.out.println("9. Finalizar Scrim");
+        System.out.println("10. Cancelar Scrim");
+        System.out.println("11. Cargar Resultado");
+        System.out.println("12. Agregar Suplente");
+        System.out.println("13. Cerrar sesión");
+        System.out.print("Seleccione una opción: ");
+    }
 
-        switch (op) {
-            case "1" -> cc.registrarAbandono(email);
-            case "2" -> cc.registrarNoShow(email);
-            case "3" -> cc.registrarStrike(email);
-            case "4" -> cc.registrarCooldown(email);
-            case "5" -> cc.listarHistorial();
-            case "0" -> { return; }
-            default -> System.out.println("Opción inválida.");
+    private static boolean procesarOpcion(int opcion, Rol rol) {
+        try {
+            if (rol == Rol.PLAYER) {
+                return procesarOpcionJugador(opcion);
+            } else {
+                return procesarOpcionOrganizer(opcion);
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+            return false;
         }
     }
 
-    // ===== Estrategia =====
-    private static void estrategiaMenu(ScrimService scrimService, Scanner sc) {
-        System.out.println("Estrategia: 1) MMR  2) Latencia  3) KDA");
-        System.out.println("0) Volver");
-        System.out.print("> ");
-        String op = sc.nextLine().trim();
-        switch (op) {
-            case "1" -> scrimService.cambiarEstrategia(new EstrategiaPorMMR());
-            case "2" -> scrimService.cambiarEstrategia(new EstrategiaPorLatencia());
-            case "3" -> scrimService.cambiarEstrategia(new EstrategiaPorKDA());
-            case "0" -> { return; }
-            default -> System.out.println("Opción inválida.");
+    private static boolean procesarOpcionJugador(int opcion) {
+        switch (opcion) {
+            case 1:
+                // Listar Scrims
+                System.out.println("\n=== SCRIMS DISPONIBLES ===");
+                scrimController.listar();
+                break;
+            case 2:
+                // Unirse a Scrim
+                System.out.print("Ingrese ID del scrim: ");
+                String idScrim = scanner.nextLine().trim();
+                System.out.print("Nombre del equipo (o vacío para auto-asignar): ");
+                String nombreEquipo = scanner.nextLine().trim();
+                String emailJugador = usuarioActual.obtenerEmailUsuarioActual();
+                if (nombreEquipo.isBlank()) {
+                    scrimController.unirse(idScrim, emailJugador);
+                } else {
+                    scrimController.unirseAEquipo(idScrim, emailJugador, nombreEquipo);
+                }
+                break;
+            case 3:
+                // Cerrar sesión
+                usuarioActual.limpiarUsuarioActual();
+                System.out.println("Sesión cerrada.");
+                return false;
+            default:
+                System.out.println("Opción inválida.");
         }
-        if (!op.equals("0")) System.out.println("Estrategia actualizada.");
+        return false;
+    }
+
+    private static boolean procesarOpcionOrganizer(int opcion) {
+        switch (opcion) {
+            case 1:
+                // Listar Scrims
+                System.out.println("\n=== SCRIMS DISPONIBLES ===");
+                scrimController.listar();
+                break;
+            case 2:
+                // Crear Scrim
+                System.out.print("Juego: ");
+                String juego = scanner.nextLine().trim();
+                System.out.print("Email creador: ");
+                String emailCreador = scanner.nextLine().trim();
+                System.out.print("Email rival: ");
+                String emailRival = scanner.nextLine().trim();
+                System.out.print("Rango mínimo: ");
+                int rangoMin = leerEntero();
+                System.out.print("Rango máximo: ");
+                int rangoMax = leerEntero();
+                System.out.print("Jugadores por equipo (p.ej. 5 para 5v5): ");
+                int cupo = leerEntero();
+                System.out.print("Inicio (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
+                String inicioStr = scanner.nextLine().trim();
+                System.out.print("Fin (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
+                String finStr = scanner.nextLine().trim();
+                scrimController.crear(juego, emailCreador, emailRival, rangoMin, rangoMax, cupo, inicioStr, finStr);
+                break;
+            case 3:
+                // Unirse a Scrim
+                System.out.print("ID del scrim: ");
+                String idScrim = scanner.nextLine().trim();
+                System.out.print("Email del jugador: ");
+                String emailJugador = scanner.nextLine().trim();
+                System.out.print("Nombre del equipo (o vacío para auto-asignar): ");
+                String nombreEquipo = scanner.nextLine().trim();
+                if (nombreEquipo.isBlank()) {
+                    scrimController.unirse(idScrim, emailJugador);
+                } else {
+                    scrimController.unirseAEquipo(idScrim, emailJugador, nombreEquipo);
+                }
+                break;
+            case 4:
+                // Salir de Scrim
+                System.out.print("ID del scrim: ");
+                idScrim = scanner.nextLine().trim();
+                System.out.print("Email del jugador: ");
+                emailJugador = scanner.nextLine().trim();
+                scrimController.salir(idScrim, emailJugador);
+                break;
+            case 5:
+                // Confirmar Jugador
+                System.out.print("ID del scrim: ");
+                idScrim = scanner.nextLine().trim();
+                System.out.print("Email del jugador: ");
+                emailJugador = scanner.nextLine().trim();
+                scrimController.confirmar(idScrim, emailJugador);
+                break;
+            case 6:
+                // Programar Scrim
+                System.out.print("ID del scrim: ");
+                idScrim = scanner.nextLine().trim();
+                System.out.print("Fecha inicio (yyyy-MM-dd HH:mm, hora Argentina): ");
+                String inicioStr = scanner.nextLine().trim();
+                System.out.print("Fecha fin (yyyy-MM-dd HH:mm, hora Argentina): ");
+                String finStr = scanner.nextLine().trim();
+                scrimController.programar(idScrim, inicioStr, finStr);
+                break;
+            case 7:
+                // Limpiar Agenda
+                System.out.print("ID del scrim: ");
+                idScrim = scanner.nextLine().trim();
+                scrimController.limpiarAgenda(idScrim);
+                break;
+            case 8:
+                // Iniciar Scrim
+                System.out.print("ID del scrim: ");
+                idScrim = scanner.nextLine().trim();
+                scrimController.iniciar(idScrim);
+                break;
+            case 9:
+                // Finalizar Scrim
+                System.out.print("ID del scrim: ");
+                idScrim = scanner.nextLine().trim();
+                scrimController.finalizar(idScrim);
+                break;
+            case 10:
+                // Cancelar Scrim
+                System.out.print("ID del scrim: ");
+                idScrim = scanner.nextLine().trim();
+                scrimController.cancelar(idScrim);
+                break;
+            case 11:
+                // Cargar Resultado
+                System.out.print("ID del scrim: ");
+                idScrim = scanner.nextLine().trim();
+                System.out.print("Email del jugador: ");
+                emailJugador = scanner.nextLine().trim();
+                System.out.print("Kills: ");
+                int kills = leerEntero();
+                System.out.print("Assists: ");
+                int assists = leerEntero();
+                System.out.print("Deaths: ");
+                int deaths = leerEntero();
+                System.out.print("Rating: ");
+                double rating = leerDouble();
+                scrimController.cargarResultado(idScrim, emailJugador, kills, assists, deaths, rating);
+                break;
+            case 12:
+                // Agregar Suplente
+                System.out.print("ID del scrim: ");
+                idScrim = scanner.nextLine().trim();
+                System.out.print("Email del jugador: ");
+                emailJugador = scanner.nextLine().trim();
+                scrimController.agregarSuplente(idScrim, emailJugador);
+                break;
+            case 13:
+                // Cerrar sesión
+                usuarioActual.limpiarUsuarioActual();
+                System.out.println("Sesión cerrada.");
+                return false;
+            default:
+                System.out.println("Opción inválida.");
+        }
+        return false;
+    }
+
+    private static int leerEntero() {
+        try {
+            String input = scanner.nextLine().trim();
+            return Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.print("Por favor ingrese un número válido: ");
+            return leerEntero();
+        }
+    }
+
+    private static double leerDouble() {
+        try {
+            String input = scanner.nextLine().trim();
+            return Double.parseDouble(input);
+        } catch (NumberFormatException e) {
+            System.out.print("Por favor ingrese un número válido: ");
+            return leerDouble();
+        }
     }
 }
