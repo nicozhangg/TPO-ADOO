@@ -34,7 +34,7 @@ public class Main {
         scrimController = new ScrimController(scrimService, usuarioService, usuarioActual);
 
         // Iniciar scheduler para transiciones automáticas (revisa cada 30 segundos)
-        ScrimSchedulerService schedulerService = new ScrimSchedulerService(scrimRepo, scrimService);
+        ScrimSchedulerService schedulerService = ScrimSchedulerService.getInstance(scrimRepo, scrimService);
         schedulerService.iniciar(30);
 
         // Agregar shutdown hook para detener el scheduler al cerrar la aplicación
@@ -189,11 +189,21 @@ public class Main {
                 int rangoMax = leerEntero();
                 System.out.print("Jugadores por equipo (p.ej. 5 para 5v5): ");
                 int cupo = leerEntero();
+                System.out.print("Formato (ej. 5v5, 3v3): ");
+                String formato = scanner.nextLine().trim();
+                System.out.print("Región/servidor: ");
+                String region = scanner.nextLine().trim();
+                System.out.print("Latencia máxima (ms): ");
+                int latenciaMax = leerEntero();
+                System.out.print("Modalidad (ranked-like / casual / práctica): ");
+                String modalidad = scanner.nextLine().trim();
                 System.out.print("Inicio (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
                 String inicioStr = scanner.nextLine().trim();
                 System.out.print("Fin (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
                 String finStr = scanner.nextLine().trim();
-                scrimController.crear(juego, emailCreador, emailRival, rangoMin, rangoMax, cupo, inicioStr, finStr);
+                scrimController.crear(juego, emailCreador, emailRival, rangoMin, rangoMax,
+                        cupo, formato, region, latenciaMax, modalidad,
+                        inicioStr, finStr);
                 break;
             case 3:
                 // Unirse a Scrim

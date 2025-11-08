@@ -14,14 +14,33 @@ import java.util.concurrent.TimeUnit;
  * basadas en fecha/hora programada.
  */
 public class ScrimSchedulerService {
+    private static volatile ScrimSchedulerService instancia;
+
     private final ScrimRepository repo;
     private final ScrimService scrimService;
     private ScheduledExecutorService scheduler;
     private boolean activo = false;
 
-    public ScrimSchedulerService(ScrimRepository repo, ScrimService scrimService) {
+    private ScrimSchedulerService(ScrimRepository repo, ScrimService scrimService) {
         this.repo = repo;
         this.scrimService = scrimService;
+    }
+
+    /**
+     * Obtiene la instancia única del scheduler. Si aún no existe, la crea.
+     * @param repo repositorio de scrims
+     * @param scrimService servicio de scrims
+     * @return instancia única del servicio de scheduler
+     */
+    public static ScrimSchedulerService getInstance(ScrimRepository repo, ScrimService scrimService) {
+        if (instancia == null) {
+            synchronized (ScrimSchedulerService.class) {
+                if (instancia == null) {
+                    instancia = new ScrimSchedulerService(repo, scrimService);
+                }
+            }
+        }
+        return instancia;
     }
 
     /**
@@ -70,6 +89,7 @@ public class ScrimSchedulerService {
         }
 
         activo = false;
+        scheduler = null;
         System.out.println("[scheduler] Detenido");
     }
 

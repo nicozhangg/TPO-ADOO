@@ -14,6 +14,10 @@ public class Scrim {
     private final String emailRival;
     private final int rangoMin;
     private final int rangoMax;
+    private final String formato;
+    private final String region;
+    private final int latenciaMaxMs;
+    private final String modalidad;
 
     // Agenda dentro del scrim
     private LocalDateTime inicio;
@@ -31,8 +35,17 @@ public class Scrim {
     private final List<Estadistica> estadisticas = new ArrayList<>();
     private final List<WaitlistEntry> listaEspera = new ArrayList<>();
 
-    public Scrim(String juego, String emailCreador, String emailRival, int rangoMin, int rangoMax, int cupo) {
+    public Scrim(String juego, String emailCreador, String emailRival,
+                 int rangoMin, int rangoMax, int cupo,
+                 String formato, String region, int latenciaMaxMs,
+                 String modalidad) {
         if (cupo <= 0) throw new IllegalArgumentException("Cupo debe ser >= 1");
+        if (rangoMin < 0 || rangoMax < rangoMin) {
+            throw new IllegalArgumentException("Rangos inválidos");
+        }
+        if (latenciaMaxMs <= 0) {
+            throw new IllegalArgumentException("Latencia máxima debe ser > 0 ms");
+        }
         this.id = UUID.randomUUID().toString();
         this.juego = Objects.requireNonNull(juego);
         this.emailCreador = Objects.requireNonNull(emailCreador);
@@ -40,6 +53,13 @@ public class Scrim {
         this.rangoMin = rangoMin;
         this.rangoMax = rangoMax;
         this.cupo = cupo;
+        this.formato = Objects.requireNonNull(formato, "Formato requerido").trim();
+        if (this.formato.isEmpty()) throw new IllegalArgumentException("Formato requerido");
+        this.region = Objects.requireNonNull(region, "Región requerida").trim();
+        if (this.region.isEmpty()) throw new IllegalArgumentException("Región requerida");
+        this.latenciaMaxMs = latenciaMaxMs;
+        this.modalidad = Objects.requireNonNull(modalidad, "Modalidad requerida").trim();
+        if (this.modalidad.isEmpty()) throw new IllegalArgumentException("Modalidad requerida");
 
         // Crear equipos: equipo1 (creador) y equipo2 (rival)
         this.equipo1 = new Equipo("Equipo " + emailCreador, emailCreador);
@@ -151,6 +171,10 @@ public class Scrim {
     public String getEmailRival(){ return emailRival; }
     public int getRangoMin(){ return rangoMin; }
     public int getRangoMax(){ return rangoMax; }
+    public String getFormato(){ return formato; }
+    public String getRegion(){ return region; }
+    public int getLatenciaMaxMs(){ return latenciaMaxMs; }
+    public String getModalidad(){ return modalidad; }
     public EstadoScrim getEstado(){ return estado; }
     public LocalDateTime getInicio(){ return inicio; }
     public LocalDateTime getFin(){ return fin; }
@@ -202,8 +226,9 @@ public class Scrim {
 
     @Override public String toString(){
         String ventana = (inicio != null && fin != null) ? (" " + inicio + "→" + fin) : " (sin agenda)";
-        return "Scrim{id='%s', juego='%s', cupo=%d/equipo, equipo1=%d/%d, equipo2=%d/%d, estado=%s%s}"
-                .formatted(id, juego, cupo, 
+        return "Scrim{id='%s', juego='%s', formato='%s', region='%s', cupo=%d/equipo, latenciaMax=%dms, modalidad='%s', equipo1=%d/%d, equipo2=%d/%d, estado=%s%s}"
+                .formatted(id, juego, formato, region, cupo,
+                    latenciaMaxMs, modalidad,
                     equipo1.getCantidadJugadores(), cupo,
                     equipo2.getCantidadJugadores(), cupo,
                     estado.getNombre(), ventana);
@@ -220,6 +245,10 @@ public class Scrim {
             o.addProperty("rangoMin", src.rangoMin);
             o.addProperty("rangoMax", src.rangoMax);
             o.addProperty("cupo", src.cupo);
+            o.addProperty("formato", src.formato);
+            o.addProperty("region", src.region);
+            o.addProperty("latenciaMaxMs", src.latenciaMaxMs);
+            o.addProperty("modalidad", src.modalidad);
             o.addProperty("estado", src.estado.getNombre());
             if (src.inicio != null) o.addProperty("inicio", src.inicio.toString());
             if (src.fin != null)    o.addProperty("fin",    src.fin.toString());
@@ -293,13 +322,31 @@ public class Scrim {
 
         @Override public Scrim deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext ctx) throws JsonParseException {
             JsonObject o = json.getAsJsonObject();
+            int cupo = o.get("cupo").getAsInt();
+            String formato = o.has("formato") && !o.get("formato").isJsonNull()
+                    ? o.get("formato").getAsString()
+                    : "%dv%d".formatted(cupo, cupo);
+            String region = o.has("region") && !o.get("region").isJsonNull()
+                    ? o.get("region").getAsString()
+                    : "REGION_DESCONOCIDA";
+            int latenciaMax = o.has("latenciaMaxMs") && !o.get("latenciaMaxMs").isJsonNull()
+                    ? o.get("latenciaMaxMs").getAsInt()
+                    : 100;
+            String modalidad = o.has("modalidad") && !o.get("modalidad").isJsonNull()
+                    ? o.get("modalidad").getAsString()
+                    : "casual";
+
             Scrim s = new Scrim(
                     o.get("juego").getAsString(),
                     o.get("emailCreador").getAsString(),
                     o.get("emailRival").getAsString(),
                     o.get("rangoMin").getAsInt(),
                     o.get("rangoMax").getAsInt(),
-                    o.get("cupo").getAsInt()
+                    cupo,
+                    formato,
+                    region,
+                    latenciaMax,
+                    modalidad
             );
             try {
                 var idF = Scrim.class.getDeclaredField("id"); idF.setAccessible(true); idF.set(s, o.get("id").getAsString());

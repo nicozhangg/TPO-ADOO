@@ -30,20 +30,39 @@ public class ScrimService {
     /** Crear scrim equipo vs equipo con cupo (jugadores por equipo) y fechas opcionales */
     public Scrim crearScrim(String juego, String emailCreador, String emailRival,
                             int rangoMin, int rangoMax, int cupo,
+                            String formato, String region, int latenciaMaxMs,
+                            String modalidad,
                             LocalDateTime inicio, LocalDateTime fin) {
+        if (formato == null || formato.isBlank()) {
+            throw new IllegalArgumentException("Formato requerido");
+        }
+        if (region == null || region.isBlank()) {
+            throw new IllegalArgumentException("Región requerida");
+        }
+        if (modalidad == null || modalidad.isBlank()) {
+            throw new IllegalArgumentException("Modalidad requerida");
+        }
+        if (latenciaMaxMs <= 0) {
+            throw new IllegalArgumentException("Latencia máxima debe ser mayor a 0");
+        }
         usuarios.buscar(emailCreador);
         usuarios.buscar(emailRival);
-        Scrim s = new Scrim(juego, emailCreador, emailRival, rangoMin, rangoMax, cupo);
+        Scrim s = new Scrim(
+                juego, emailCreador, emailRival,
+                rangoMin, rangoMax, cupo,
+                formato.trim(), region.trim(), latenciaMaxMs,
+                modalidad.trim());
         if (inicio != null && fin != null) s.programar(inicio, fin);
         repo.guardar(s);
-        System.out.println("[evento] ScrimCreado " + s.getId() + " (equipo vs equipo, " + cupo + " jugadores por equipo)");
+        System.out.println("[evento] ScrimCreado " + s.getId() + " (formato=" + formato + ", región=" + region + ", modalidad=" + modalidad + ")");
         return s;
     }
 
     /** Compat: crear SIN fechas y con cupo por defecto (=2) */
     public Scrim crearScrim(String juego, String emailCreador, String emailRival,
                             int rangoMin, int rangoMax){
-        return crearScrim(juego, emailCreador, emailRival, rangoMin, rangoMax, 2, null, null);
+        return crearScrim(juego, emailCreador, emailRival, rangoMin, rangoMax, 2,
+                "2v2", "REGION_DESCONOCIDA", 100, "casual", null, null);
     }
 
     // =========================================================
