@@ -81,8 +81,29 @@ public class ScrimController {
         }
         
         usuarios.buscar(emailJugador); // valida existencia
-        service.unirse(idScrim, emailJugador);
+        service.unirse(idScrim, emailJugador); // Determina equipo automáticamente
         System.out.println("Jugador unido.");
+    }
+    
+    public void unirseAEquipo(String idScrim, String emailJugador, String nombreEquipo){
+        // PLAYER solo puede unirse si es el mismo usuario logueado
+        Rol rolActual = usuarioActual.obtenerRolUsuarioActual();
+        if (rolActual == null) {
+            throw new IllegalStateException("No hay usuario logueado");
+        }
+        
+        if (rolActual == Rol.PLAYER) {
+            String emailActual = usuarioActual.obtenerEmailUsuarioActual();
+            if (emailActual == null || !emailActual.equals(emailJugador)) {
+                throw new SecurityException("Solo puedes unirte a un scrim con tu propio email");
+            }
+        } else {
+            validarPermisoOrganizer();
+        }
+        
+        usuarios.buscar(emailJugador); // valida existencia
+        service.unirseAEquipo(idScrim, emailJugador, nombreEquipo);
+        System.out.println("Jugador unido al equipo.");
     }
     public void salir(String idScrim, String emailJugador){
         validarPermisoOrganizer();
@@ -93,7 +114,13 @@ public class ScrimController {
         validarPermisoOrganizer();
         usuarios.buscar(emailJugador);
         service.confirmar(idScrim, emailJugador);
-        System.out.println("Jugador confirmado.");
+        System.out.println("Equipo confirmado.");
+    }
+    
+    public void confirmarEquipo(String idScrim, String nombreEquipo){
+        validarPermisoOrganizer();
+        service.confirmarEquipo(idScrim, nombreEquipo);
+        System.out.println("Equipo confirmado.");
     }
 
     // ================== AGENDA/FLUJO ==================

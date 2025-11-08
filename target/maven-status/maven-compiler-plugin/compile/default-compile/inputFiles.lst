@@ -1,7 +1,14 @@
 C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\controller\ConductaController.java
 C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\controller\ScrimController.java
 C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\controller\UsuarioController.java
+C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\Equipo.java
 C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\Estadistica.java
+C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\estado\BuscandoJugadoresState.java
+C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\estado\CanceladoState.java
+C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\estado\ConfirmadoState.java
+C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\estado\EnJuegoState.java
+C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\estado\FinalizadoState.java
+C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\estado\LobbyArmadoState.java
 C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\EstadoScrim.java
 C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\KDA.java
 C:\Users\Nicolas\Desktop\tpo-scrims-maven\src\main\java\ar\edu\tpo\domain\motivo\Motivo.java

@@ -27,7 +27,7 @@ public class ScrimService {
     // ================  CREACIÓN DEL SCRIM  ===================
     // =========================================================
 
-    /** Crear con CUP0 y fechas opcionales (recomendado para el nuevo modelo) */
+    /** Crear scrim equipo vs equipo con cupo (jugadores por equipo) y fechas opcionales */
     public Scrim crearScrim(String juego, String emailCreador, String emailRival,
                             int rangoMin, int rangoMax, int cupo,
                             LocalDateTime inicio, LocalDateTime fin) {
@@ -36,7 +36,7 @@ public class ScrimService {
         Scrim s = new Scrim(juego, emailCreador, emailRival, rangoMin, rangoMax, cupo);
         if (inicio != null && fin != null) s.programar(inicio, fin);
         repo.guardar(s);
-        System.out.println("[evento] ScrimCreado " + s.getId());
+        System.out.println("[evento] ScrimCreado " + s.getId() + " (equipo vs equipo, " + cupo + " jugadores por equipo)");
         return s;
     }
 
@@ -59,9 +59,17 @@ public class ScrimService {
     public void unirse(String idScrim, String emailJugador){
         usuarios.buscar(emailJugador);
         Scrim s = repo.buscarPorId(idScrim);
-        s.agregarJugador(emailJugador);
+        s.agregarJugador(emailJugador); // Determina equipo automáticamente
         repo.guardar(s);
         System.out.println("[evento] JugadorUnido scrim=" + idScrim + " jugador=" + emailJugador);
+    }
+    
+    public void unirseAEquipo(String idScrim, String emailJugador, String nombreEquipo){
+        usuarios.buscar(emailJugador);
+        Scrim s = repo.buscarPorId(idScrim);
+        s.agregarJugador(emailJugador, nombreEquipo);
+        repo.guardar(s);
+        System.out.println("[evento] JugadorUnido scrim=" + idScrim + " jugador=" + emailJugador + " equipo=" + nombreEquipo);
     }
 
     public void salir(String idScrim, String emailJugador){
@@ -74,9 +82,16 @@ public class ScrimService {
     public void confirmar(String idScrim, String emailJugador){
         usuarios.buscar(emailJugador);
         Scrim s = repo.buscarPorId(idScrim);
-        s.confirmarJugador(emailJugador);
+        s.confirmarJugador(emailJugador); // Confirma el equipo del jugador
         repo.guardar(s);
-        System.out.println("[evento] JugadorConfirmo scrim=" + idScrim + " jugador=" + emailJugador);
+        System.out.println("[evento] EquipoConfirmado scrim=" + idScrim + " jugador=" + emailJugador);
+    }
+    
+    public void confirmarEquipo(String idScrim, String nombreEquipo){
+        Scrim s = repo.buscarPorId(idScrim);
+        s.confirmarEquipo(nombreEquipo);
+        repo.guardar(s);
+        System.out.println("[evento] EquipoConfirmado scrim=" + idScrim + " equipo=" + nombreEquipo);
     }
 
     // =========================================================

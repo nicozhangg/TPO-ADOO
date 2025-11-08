@@ -1,7 +1,6 @@
 package ar.edu.tpo.service;
 
-import ar.edu.tpo.domain.EstadoScrim;
-import ar.edu.tpo.domain.Scrim;
+import ar.edu.tpo.domain.*;
 import ar.edu.tpo.repository.ScrimRepository;
 
 import java.time.LocalDateTime;
@@ -90,7 +89,7 @@ public class ScrimSchedulerService {
 
                 // CONFIRMADO → EN_JUEGO: cuando la fecha de inicio ya pasó completamente (comparando en zona Argentina)
                 // Usamos isBefore con negación para asegurar que la hora de inicio YA pasó
-                if (estado == EstadoScrim.CONFIRMADO && inicio != null) {
+                if (estado instanceof ar.edu.tpo.domain.estado.ConfirmadoState && inicio != null) {
                     ZonedDateTime inicioArgentina = ArgentinaTimeZone.aZonaArgentina(inicio);
                     if (inicioArgentina != null) {
                         // Verificar que la hora actual es después o igual a la hora de inicio

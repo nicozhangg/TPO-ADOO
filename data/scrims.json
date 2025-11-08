@@ -10,17 +10,37 @@
     "estado": "BUSCANDO_JUGADORES",
     "inicio": "2025-10-28T20:00",
     "fin": "2025-10-29T00:00",
+    "equipo1": {
+      "nombre": "Equipo a@a.com",
+      "capitan": "a@a.com",
+      "jugadores": [
+        "a@a.com",
+        "c@c.com",
+        "d@d.com"
+      ]
+    },
+    "equipo2": {
+      "nombre": "Equipo b@b.com",
+      "capitan": "b@b.com",
+      "jugadores": [
+        "b@b.com"
+      ]
+    },
     "jugadores": [
       "a@a.com",
-      "b@b.com",
       "c@c.com",
-      "d@d.com"
+      "d@d.com",
+      "b@b.com"
     ],
+    "confirmacionesEquipos": {
+      "Equipo a@a.com": false,
+      "Equipo b@b.com": false
+    },
     "confirmaciones": {
       "a@a.com": false,
-      "b@b.com": false,
       "c@c.com": false,
-      "d@d.com": false
+      "d@d.com": false,
+      "b@b.com": false
     },
     "estadisticas": [],
     "listaEspera": []
@@ -36,13 +56,71 @@
     "estado": "EN_JUEGO",
     "inicio": "2025-11-02T19:04",
     "fin": "2025-11-02T20:50",
+    "equipo1": {
+      "nombre": "Equipo a@a.com",
+      "capitan": "a@a.com",
+      "jugadores": [
+        "a@a.com"
+      ]
+    },
+    "equipo2": {
+      "nombre": "Equipo b@b.com",
+      "capitan": "b@b.com",
+      "jugadores": [
+        "b@b.com"
+      ]
+    },
     "jugadores": [
       "a@a.com",
       "b@b.com"
     ],
+    "confirmacionesEquipos": {
+      "Equipo a@a.com": true,
+      "Equipo b@b.com": true
+    },
     "confirmaciones": {
       "a@a.com": true,
       "b@b.com": true
+    },
+    "estadisticas": [],
+    "listaEspera": []
+  },
+  "c107aa78-8d2a-4da2-8e56-abc3d05f58fa": {
+    "id": "c107aa78-8d2a-4da2-8e56-abc3d05f58fa",
+    "juego": "Valorant",
+    "emailCreador": "a@a.com",
+    "emailRival": "b@b.com",
+    "rangoMin": 190,
+    "rangoMax": 199,
+    "cupo": 3,
+    "estado": "BUSCANDO_JUGADORES",
+    "inicio": "2025-04-11T19:30",
+    "fin": "2025-04-11T23:30",
+    "equipo1": {
+      "nombre": "Equipo a@a.com",
+      "capitan": "a@a.com",
+      "jugadores": [
+        "a@a.com"
+      ]
+    },
+    "equipo2": {
+      "nombre": "Equipo b@b.com",
+      "capitan": "b@b.com",
+      "jugadores": [
+        "b@b.com"
+      ]
+    },
+    "jugadores": [
+      "a@a.com",
+      "b@b.com"
+    ],
+    "confirmacionesEquipos": {
+      "Equipo a@a.com": false,
+      "Equipo b@b.com": false
+    },
+    "confirmaciones": {
+      "a@a.com": false,
+      "b@b.com": false
     },
     "estadisticas": [],
     "listaEspera": []

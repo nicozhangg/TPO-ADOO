@@ -19,19 +19,20 @@ public class Scrim {
     private LocalDateTime inicio;
     private LocalDateTime fin;
 
-    // NUEVO: cupo/jugadores/confirmaciones
-    private final int cupo;                                    // total de plazas (ej. 10 para 5v5)
-    private final LinkedHashSet<String> jugadores = new LinkedHashSet<>();
-    private final LinkedHashMap<String, Boolean> confirmaciones = new LinkedHashMap<>();
+    // EQUIPO VS EQUIPO: cupo = jugadores por equipo (ej. 5 para 5v5)
+    private final int cupo;                                    // jugadores por equipo
+    private final Equipo equipo1;                             // equipo del creador
+    private final Equipo equipo2;                              // equipo del rival
+    private final LinkedHashMap<String, Boolean> confirmacionesEquipos = new LinkedHashMap<>(); // confirmación por equipo (nombre)
 
-    private EstadoScrim estado = EstadoScrim.BUSCANDO_JUGADORES;
+    private EstadoScrim estado = ar.edu.tpo.domain.estado.BuscandoJugadoresState.INSTANCIA;
 
     private Resultado resultado;
     private final List<Estadistica> estadisticas = new ArrayList<>();
     private final List<WaitlistEntry> listaEspera = new ArrayList<>();
 
     public Scrim(String juego, String emailCreador, String emailRival, int rangoMin, int rangoMax, int cupo) {
-        if (cupo <= 1) throw new IllegalArgumentException("Cupo debe ser >= 2");
+        if (cupo <= 0) throw new IllegalArgumentException("Cupo debe ser >= 1");
         this.id = UUID.randomUUID().toString();
         this.juego = Objects.requireNonNull(juego);
         this.emailCreador = Objects.requireNonNull(emailCreador);
@@ -40,9 +41,11 @@ public class Scrim {
         this.rangoMax = rangoMax;
         this.cupo = cupo;
 
-        // opcional: arrancar con creador/rival ya dentro
-        agregarJugador(emailCreador);
-        agregarJugador(emailRival);
+        // Crear equipos: equipo1 (creador) y equipo2 (rival)
+        this.equipo1 = new Equipo("Equipo " + emailCreador, emailCreador);
+        this.equipo2 = new Equipo("Equipo " + emailRival, emailRival);
+        this.confirmacionesEquipos.put(equipo1.getNombre(), Boolean.FALSE);
+        this.confirmacionesEquipos.put(equipo2.getNombre(), Boolean.FALSE);
     }
 
     // ===== Agenda =====
@@ -53,67 +56,88 @@ public class Scrim {
     }
     public void limpiarAgenda(){ this.inicio = null; this.fin = null; }
 
-    // ===== Jugadores & Confirmaciones =====
+    // ===== Métodos públicos que delegan al estado =====
+    // Mantener compatibilidad: agregar jugador a un equipo
+    public void agregarJugador(String email, String nombreEquipo){
+        estado.agregarJugadorAEquipo(this, email, nombreEquipo);
+    }
+    
+    // Método legacy: agrega al equipo del creador si es el creador, sino al rival
     public void agregarJugador(String email){
-        if (estado == EstadoScrim.CANCELADO || estado == EstadoScrim.FINALIZADO || estado == EstadoScrim.EN_JUEGO)
-            throw new IllegalStateException("No se puede agregar jugador en estado " + estado);
-        if (jugadores.size() >= cupo) throw new IllegalStateException("Cupo completo");
-        jugadores.add(email);
-        confirmaciones.putIfAbsent(email, Boolean.FALSE);
-        recalcEstadoPorCupoYConfirmaciones();
+        if (emailCreador.equals(email)) {
+            estado.agregarJugadorAEquipo(this, email, equipo1.getNombre());
+        } else if (emailRival.equals(email)) {
+            estado.agregarJugadorAEquipo(this, email, equipo2.getNombre());
+        } else {
+            // Por defecto, agregar al equipo1
+            estado.agregarJugadorAEquipo(this, email, equipo1.getNombre());
+        }
     }
 
     public void quitarJugador(String email){
-        if (estado == EstadoScrim.EN_JUEGO || estado == EstadoScrim.FINALIZADO)
-            throw new IllegalStateException("No se puede quitar jugador con el scrim en curso o finalizado");
-        jugadores.remove(email);
-        confirmaciones.remove(email);
-        recalcEstadoPorCupoYConfirmaciones();
+        estado.quitarJugador(this, email);
     }
 
+    public void confirmarEquipo(String nombreEquipo){
+        estado.confirmarEquipo(this, nombreEquipo);
+    }
+    
+    // Método legacy: confirma el equipo del jugador
     public void confirmarJugador(String email){
-        if (!jugadores.contains(email)) throw new IllegalStateException("El jugador no está en el scrim");
-        if (estado != EstadoScrim.LOBBY_ARMADO && estado != EstadoScrim.CONFIRMADO)
-            throw new IllegalStateException("Solo se puede confirmar con lobby armado");
-        confirmaciones.put(email, Boolean.TRUE);
-        recalcEstadoPorCupoYConfirmaciones();
-    }
-
-    private void recalcEstadoPorCupoYConfirmaciones(){
-        if (estado == EstadoScrim.CANCELADO || estado == EstadoScrim.FINALIZADO || estado == EstadoScrim.EN_JUEGO) return;
-
-        if (jugadores.size() < cupo) {
-            estado = EstadoScrim.BUSCANDO_JUGADORES;
-            // reset parciales de confirmación si se cae del cupo
-            for (String j : jugadores) confirmaciones.putIfAbsent(j, Boolean.FALSE);
-            return;
+        if (equipo1.contieneJugador(email)) {
+            estado.confirmarEquipo(this, equipo1.getNombre());
+        } else if (equipo2.contieneJugador(email)) {
+            estado.confirmarEquipo(this, equipo2.getNombre());
+        } else {
+            throw new IllegalArgumentException("El jugador no pertenece a ningún equipo");
         }
-
-        // cupo completo
-        boolean todosConfirmaron = jugadores.stream().allMatch(j -> Boolean.TRUE.equals(confirmaciones.get(j)));
-        estado = todosConfirmaron ? EstadoScrim.CONFIRMADO : EstadoScrim.LOBBY_ARMADO;
     }
 
-    // ===== Transiciones de alto nivel =====
     public void iniciar(){
-        if (estado != EstadoScrim.CONFIRMADO) throw new IllegalStateException("Debe estar CONFIRMADO para iniciar");
-        estado = EstadoScrim.EN_JUEGO;
+        estado.iniciar(this);
     }
 
     public void finalizar(){
-        if (estado != EstadoScrim.EN_JUEGO) throw new IllegalStateException("Solo desde EN_JUEGO");
-        estado = EstadoScrim.FINALIZADO;
+        estado.finalizar(this);
     }
 
     public void cancelar(){
-        if (estado == EstadoScrim.FINALIZADO) throw new IllegalStateException("No cancelar finalizado");
-        estado = EstadoScrim.CANCELADO;
+        estado.cancelar(this);
     }
 
-    // ===== Stats / waitlist legacy =====
     public void registrarEstadistica(Estadistica e){
-        if (estado != EstadoScrim.EN_JUEGO && estado != EstadoScrim.FINALIZADO)
-            throw new IllegalStateException("Estadísticas solo en EN_JUEGO/FINALIZADO");
+        estado.registrarEstadistica(this, e);
+    }
+
+    // ===== Métodos públicos para que los estados modifiquen el scrim =====
+    // (públicos porque los estados están en un subpaquete)
+    public void agregarJugadorAEquipoDirecto(String email, String nombreEquipo){
+        Equipo equipo = obtenerEquipoPorNombre(nombreEquipo);
+        if (equipo.getCantidadJugadores() >= cupo) {
+            throw new IllegalStateException("El equipo " + nombreEquipo + " tiene el cupo completo (" + cupo + " jugadores)");
+        }
+        equipo.agregarJugador(email);
+    }
+
+    public void quitarJugadorDirecto(String email){
+        if (equipo1.contieneJugador(email)) {
+            equipo1.quitarJugador(email);
+        } else if (equipo2.contieneJugador(email)) {
+            equipo2.quitarJugador(email);
+        }
+    }
+    
+    public Equipo obtenerEquipoPorNombre(String nombreEquipo) {
+        if (equipo1.getNombre().equals(nombreEquipo)) return equipo1;
+        if (equipo2.getNombre().equals(nombreEquipo)) return equipo2;
+        throw new IllegalArgumentException("Equipo no encontrado: " + nombreEquipo);
+    }
+
+    public void cambiarEstado(EstadoScrim nuevoEstado){
+        this.estado = nuevoEstado;
+    }
+
+    public void agregarEstadisticaDirecta(Estadistica e){
         estadisticas.add(e);
     }
     public void agregarAListaEspera(String emailJugador){
@@ -131,8 +155,45 @@ public class Scrim {
     public LocalDateTime getInicio(){ return inicio; }
     public LocalDateTime getFin(){ return fin; }
     public int getCupo(){ return cupo; }
-    public Set<String> getJugadores(){ return Collections.unmodifiableSet(jugadores); }
-    public Map<String, Boolean> getConfirmaciones(){ return Collections.unmodifiableMap(confirmaciones); }
+    public Equipo getEquipo1(){ return equipo1; }
+    public Equipo getEquipo2(){ return equipo2; }
+    
+    // Métodos legacy para compatibilidad
+    public Set<String> getJugadores(){ 
+        Set<String> todos = new LinkedHashSet<>();
+        todos.addAll(equipo1.getJugadores());
+        todos.addAll(equipo2.getJugadores());
+        return Collections.unmodifiableSet(todos);
+    }
+    
+    public Map<String, Boolean> getConfirmaciones(){ 
+        // Convertir confirmaciones de equipos a formato legacy (por jugador)
+        Map<String, Boolean> conf = new LinkedHashMap<>();
+        for (String jugador : equipo1.getJugadores()) {
+            conf.put(jugador, confirmacionesEquipos.getOrDefault(equipo1.getNombre(), Boolean.FALSE));
+        }
+        for (String jugador : equipo2.getJugadores()) {
+            conf.put(jugador, confirmacionesEquipos.getOrDefault(equipo2.getNombre(), Boolean.FALSE));
+        }
+        return conf;
+    }
+    
+    public Map<String, Boolean> getConfirmacionesEquipos(){ 
+        return confirmacionesEquipos; 
+    }
+    
+    public int getTotalJugadores() {
+        return equipo1.getCantidadJugadores() + equipo2.getCantidadJugadores();
+    }
+    
+    public boolean ambosEquiposCompletos() {
+        return equipo1.getCantidadJugadores() >= cupo && equipo2.getCantidadJugadores() >= cupo;
+    }
+    
+    public boolean ambosEquiposConfirmados() {
+        return Boolean.TRUE.equals(confirmacionesEquipos.get(equipo1.getNombre())) &&
+               Boolean.TRUE.equals(confirmacionesEquipos.get(equipo2.getNombre()));
+    }
 
     public Resultado getResultado(){ return resultado; }
     public void setResultado(Resultado r){ this.resultado = r; }
@@ -141,8 +202,11 @@ public class Scrim {
 
     @Override public String toString(){
         String ventana = (inicio != null && fin != null) ? (" " + inicio + "→" + fin) : " (sin agenda)";
-        return "Scrim{id='%s', juego='%s', cupo=%d, jugadores=%d/%d, estado=%s%s}"
-                .formatted(id, juego, jugadores.size(), cupo, cupo, estado, ventana);
+        return "Scrim{id='%s', juego='%s', cupo=%d/equipo, equipo1=%d/%d, equipo2=%d/%d, estado=%s%s}"
+                .formatted(id, juego, cupo, 
+                    equipo1.getCantidadJugadores(), cupo,
+                    equipo2.getCantidadJugadores(), cupo,
+                    estado.getNombre(), ventana);
     }
 
     // ==== JSON Adapter ====
@@ -156,16 +220,42 @@ public class Scrim {
             o.addProperty("rangoMin", src.rangoMin);
             o.addProperty("rangoMax", src.rangoMax);
             o.addProperty("cupo", src.cupo);
-            o.addProperty("estado", src.estado.name());
+            o.addProperty("estado", src.estado.getNombre());
             if (src.inicio != null) o.addProperty("inicio", src.inicio.toString());
             if (src.fin != null)    o.addProperty("fin",    src.fin.toString());
 
+            // Serializar equipos
+            JsonObject equipo1Json = new JsonObject();
+            equipo1Json.addProperty("nombre", src.equipo1.getNombre());
+            equipo1Json.addProperty("capitan", src.equipo1.getEmailCapitan());
+            JsonArray jugadores1 = new JsonArray();
+            for (String j : src.equipo1.getJugadores()) jugadores1.add(j);
+            equipo1Json.add("jugadores", jugadores1);
+            o.add("equipo1", equipo1Json);
+            
+            JsonObject equipo2Json = new JsonObject();
+            equipo2Json.addProperty("nombre", src.equipo2.getNombre());
+            equipo2Json.addProperty("capitan", src.equipo2.getEmailCapitan());
+            JsonArray jugadores2 = new JsonArray();
+            for (String j : src.equipo2.getJugadores()) jugadores2.add(j);
+            equipo2Json.add("jugadores", jugadores2);
+            o.add("equipo2", equipo2Json);
+            
+            // Legacy: mantener jugadores para compatibilidad
             JsonArray arrJ = new JsonArray();
-            for (String j : src.jugadores) arrJ.add(j);
+            for (String j : src.getJugadores()) arrJ.add(j);
             o.add("jugadores", arrJ);
 
+            // Confirmaciones de equipos
+            JsonObject confEquipos = new JsonObject();
+            for (var e : src.confirmacionesEquipos.entrySet()) {
+                confEquipos.addProperty(e.getKey(), e.getValue());
+            }
+            o.add("confirmacionesEquipos", confEquipos);
+            
+            // Legacy: confirmaciones por jugador (para compatibilidad)
             JsonObject conf = new JsonObject();
-            for (var e : src.confirmaciones.entrySet()) conf.addProperty(e.getKey(), e.getValue());
+            for (var e : src.getConfirmaciones().entrySet()) conf.addProperty(e.getKey(), e.getValue());
             o.add("confirmaciones", conf);
 
             JsonArray stats = new JsonArray();
@@ -213,7 +303,7 @@ public class Scrim {
             );
             try {
                 var idF = Scrim.class.getDeclaredField("id"); idF.setAccessible(true); idF.set(s, o.get("id").getAsString());
-                var esF = Scrim.class.getDeclaredField("estado"); esF.setAccessible(true); esF.set(s, EstadoScrim.valueOf(o.get("estado").getAsString()));
+                var esF = Scrim.class.getDeclaredField("estado"); esF.setAccessible(true); esF.set(s, EstadoScrim.desdeNombre(o.get("estado").getAsString()));
             } catch (Exception e) { throw new JsonParseException("Reconstruccion Scrim fallo: " + e.getMessage(), e); }
 
             // Parsear fechas interpretándolas como hora de Argentina
@@ -230,13 +320,75 @@ public class Scrim {
                 s.fin = (finZoned != null) ? ArgentinaTimeZone.aLocalDateTime(finZoned) : null;
             }
 
-            if (o.has("jugadores")) for (JsonElement je : o.getAsJsonArray("jugadores")) s.jugadores.add(je.getAsString());
-            if (o.has("confirmaciones") && o.get("confirmaciones").isJsonObject()) {
+            // Deserializar equipos (nuevo formato)
+            if (o.has("equipo1") && o.get("equipo1").isJsonObject()) {
+                JsonObject eq1 = o.getAsJsonObject("equipo1");
+                if (eq1.has("jugadores")) {
+                    for (JsonElement je : eq1.getAsJsonArray("jugadores")) {
+                        String email = je.getAsString();
+                        if (!email.equals(s.equipo1.getEmailCapitan())) {
+                            s.equipo1.agregarJugador(email);
+                        }
+                    }
+                }
+            }
+            if (o.has("equipo2") && o.get("equipo2").isJsonObject()) {
+                JsonObject eq2 = o.getAsJsonObject("equipo2");
+                if (eq2.has("jugadores")) {
+                    for (JsonElement je : eq2.getAsJsonArray("jugadores")) {
+                        String email = je.getAsString();
+                        if (!email.equals(s.equipo2.getEmailCapitan())) {
+                            s.equipo2.agregarJugador(email);
+                        }
+                    }
+                }
+            }
+            
+            // Deserializar confirmaciones de equipos
+            if (o.has("confirmacionesEquipos") && o.get("confirmacionesEquipos").isJsonObject()) {
+                var confEquipos = o.getAsJsonObject("confirmacionesEquipos");
+                for (String k : confEquipos.keySet()) {
+                    s.confirmacionesEquipos.put(k, confEquipos.get(k).getAsBoolean());
+                }
+            }
+            
+            // Legacy: compatibilidad con formato antiguo (jugadores individuales)
+            if (o.has("jugadores") && !o.has("equipo1")) {
+                // Si no hay equipos pero hay jugadores, es formato antiguo
+                for (JsonElement je : o.getAsJsonArray("jugadores")) {
+                    String email = je.getAsString();
+                    if (s.emailCreador.equals(email)) {
+                        // ya está en equipo1 como capitán
+                    } else if (s.emailRival.equals(email)) {
+                        // ya está en equipo2 como capitán
+                    } else {
+                        // Agregar al equipo1 por defecto
+                        s.equipo1.agregarJugador(email);
+                    }
+                }
+            }
+            
+            // Legacy: confirmaciones por jugador (convertir a confirmaciones de equipos)
+            if (o.has("confirmaciones") && o.get("confirmaciones").isJsonObject() && !o.has("confirmacionesEquipos")) {
                 var conf = o.getAsJsonObject("confirmaciones");
-                for (String k : conf.keySet()) s.confirmaciones.put(k, conf.get(k).getAsBoolean());
+                // Si un jugador del equipo1 está confirmado, confirmar equipo1
+                boolean equipo1Confirmado = false;
+                boolean equipo2Confirmado = false;
+                for (String k : conf.keySet()) {
+                    if (conf.get(k).getAsBoolean()) {
+                        if (s.equipo1.contieneJugador(k)) {
+                            equipo1Confirmado = true;
+                        }
+                        if (s.equipo2.contieneJugador(k)) {
+                            equipo2Confirmado = true;
+                        }
+                    }
+                }
+                s.confirmacionesEquipos.put(s.equipo1.getNombre(), equipo1Confirmado);
+                s.confirmacionesEquipos.put(s.equipo2.getNombre(), equipo2Confirmado);
             }
             // recalcular por si faltaba algo
-            s.recalcEstadoPorCupoYConfirmaciones();
+            s.estado.recalcularEstado(s);
 
             if (o.has("resultado") && o.get("resultado").isJsonObject()) {
                 s.setResultado(new Resultado(o.getAsJsonObject("resultado").get("ganadorEmail").getAsString()));

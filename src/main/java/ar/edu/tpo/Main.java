@@ -129,7 +129,7 @@ public class Main {
                 System.out.print("Rival (email): "); String rival = sc.nextLine();
                 System.out.print("Rango mínimo MMR: "); int min = Integer.parseInt(sc.nextLine());
                 System.out.print("Rango máximo MMR: "); int max = Integer.parseInt(sc.nextLine());
-                System.out.print("Cupo total (p.ej. 10 para 5v5): "); int cupo = Integer.parseInt(sc.nextLine());
+                System.out.print("Jugadores por equipo (p.ej. 5 para 5v5): "); int cupo = Integer.parseInt(sc.nextLine());
                 System.out.print("Inicio (yyyy-MM-dd HH:mm, hora Argentina) o vacío: "); String inicio = sc.nextLine();
                 System.out.print("Fin    (yyyy-MM-dd HH:mm, hora Argentina) o vacío: "); String fin = sc.nextLine();
                 scCtrl.crear(juego, creador, rival, min, max, cupo, inicio, fin);
@@ -138,7 +138,12 @@ public class Main {
             case "3" -> {
                 System.out.print("ID scrim: "); String id = sc.nextLine();
                 System.out.print("Email jugador: "); String email = sc.nextLine();
-                scCtrl.unirse(id, email);
+                System.out.print("Nombre del equipo (o vacío para auto-asignar): "); String equipo = sc.nextLine().trim();
+                if (equipo.isBlank()) {
+                    scCtrl.unirse(id, email);
+                } else {
+                    scCtrl.unirseAEquipo(id, email, equipo);
+                }
             }
             case "4" -> {
                 System.out.print("ID scrim: "); String id = sc.nextLine();
