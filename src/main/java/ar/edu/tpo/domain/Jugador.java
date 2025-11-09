@@ -27,6 +27,7 @@ public class Jugador extends Usuario {
                 rango != null ? rango.getNombre() : null,
                 rolJuego != null ? rolJuego.getNombre() : null,
                 region != null ? region.getNombre() : null,
+                null,
                 null);
     }
 
@@ -37,7 +38,7 @@ public class Jugador extends Usuario {
                    String rangoNombre,
                    String rolNombre,
                    String regionNombre) {
-        this(null, email, password, mmr, latenciaMs, rangoNombre, rolNombre, regionNombre, null);
+        this(null, email, password, mmr, latenciaMs, rangoNombre, rolNombre, regionNombre, null, null);
     }
 
     public Jugador(String id,
@@ -48,8 +49,9 @@ public class Jugador extends Usuario {
                    String rangoNombre,
                    String rolNombre,
                    String regionNombre,
-                   List<SancionActiva> sancionesActivas) {
-        super(id, email, password, mmr, latenciaMs, sancionesActivas);
+                   List<SancionActiva> sancionesActivas,
+                   List<SancionHistorica> sancionesHistoricas) {
+        super(id, email, password, mmr, latenciaMs, sancionesActivas, sancionesHistoricas);
         this.rangoNombre = Objects.requireNonNull(rangoNombre, "rango requerido");
         this.rolNombre = Objects.requireNonNull(rolNombre, "rol requerido");
         this.regionNombre = Objects.requireNonNull(regionNombre, "región requerida");

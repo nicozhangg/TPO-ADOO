@@ -16,10 +16,12 @@
     "rango": "Hierro",
     "rolPreferido": "Duelista",
     "region": "America",
-    "sancionesActivas": [
+    "sancionesActivas": [],
+    "sancionesHistoricas": [
       {
         "motivo": "Abandono",
-        "expiraEn": "2025-11-09T02:14:42.239303700"
+        "expiraEn": "2025-11-09T15:37:14.540544400",
+        "levantadaEn": "2025-11-09T15:32:35.193987"
       }
     ]
   },
@@ -28,11 +30,11 @@
     "id": "JUG-2",
     "email": "c@c.com",
     "passwordHash": "player123",
-    "mmr": 150,
+    "mmr": 500,
     "latenciaMs": 7,
-    "rango": "Hierro",
+    "rango": "Bronce",
     "rolPreferido": "Iniciador",
-    "region": "Europa",
+    "region": "America",
     "sancionesActivas": []
   },
   "d@d.com": {
@@ -55,6 +57,18 @@
     "mmr": 1500,
     "latenciaMs": 10,
     "rango": "Platino",
+    "rolPreferido": "Duelista",
+    "region": "America",
+    "sancionesActivas": []
+  },
+  "lp366841@gmail.com": {
+    "tipo": "Jugador",
+    "id": "e7b09afd-d991-4519-947b-c9ba7050eb25",
+    "email": "lp366841@gmail.com",
+    "passwordHash": "123",
+    "mmr": 800,
+    "latenciaMs": 5,
+    "rango": "Plata",
     "rolPreferido": "Duelista",
     "region": "America",
     "sancionesActivas": []

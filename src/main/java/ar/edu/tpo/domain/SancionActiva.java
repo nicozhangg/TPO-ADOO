@@ -32,6 +32,10 @@ public class SancionActiva {
         return expiraEn == null || LocalDateTime.now().isBefore(expiraEn);
     }
 
+    public SancionHistorica aHistorica(LocalDateTime levantadaEn) {
+        return new SancionHistorica(motivo, expiraEn, levantadaEn);
+    }
+
     @Override
     public String toString() {
         if (expiraEn == null) {

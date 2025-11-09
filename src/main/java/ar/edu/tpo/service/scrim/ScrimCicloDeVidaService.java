@@ -1,6 +1,7 @@
 package ar.edu.tpo.service.scrim;
 
 import ar.edu.tpo.domain.Scrim;
+import ar.edu.tpo.notification.NotificationService;
 import ar.edu.tpo.repository.ScrimRepository;
 import ar.edu.tpo.service.UsuarioService;
 
@@ -15,10 +16,12 @@ public class ScrimCicloDeVidaService {
 
     private final ScrimRepository repo;
     private final UsuarioService usuarios;
+    private final NotificationService notificaciones;
 
-    public ScrimCicloDeVidaService(ScrimRepository repo, UsuarioService usuarios) {
+    public ScrimCicloDeVidaService(ScrimRepository repo, UsuarioService usuarios, NotificationService notificaciones) {
         this.repo = Objects.requireNonNull(repo);
         this.usuarios = Objects.requireNonNull(usuarios);
+        this.notificaciones = notificaciones;
     }
 
     public Scrim crearScrim(String juego, String emailCreador,
@@ -78,6 +81,9 @@ public class ScrimCicloDeVidaService {
         scrim.programar(inicio, fin);
         repo.guardar(scrim);
         System.out.println("[evento] ScrimProgramado " + idScrim + " " + inicio + "→" + fin);
+        if (notificaciones != null) {
+            notificaciones.notificarScrimProgramado(scrim);
+        }
     }
 
     public void limpiarAgenda(String idScrim) {
@@ -92,6 +98,9 @@ public class ScrimCicloDeVidaService {
         scrim.iniciar();
         repo.guardar(scrim);
         System.out.println("[evento] ScrimEnJuego " + idScrim);
+        if (notificaciones != null) {
+            notificaciones.notificarScrimEstado(scrim, "EN_JUEGO");
+        }
     }
 
     public void finalizarScrim(String idScrim) {
@@ -99,6 +108,9 @@ public class ScrimCicloDeVidaService {
         scrim.finalizar();
         repo.guardar(scrim);
         System.out.println("[evento] ScrimFinalizado " + idScrim);
+        if (notificaciones != null) {
+            notificaciones.notificarScrimEstado(scrim, "FINALIZADO");
+        }
     }
 
     public void cancelarScrim(String idScrim) {
@@ -106,6 +118,9 @@ public class ScrimCicloDeVidaService {
         scrim.cancelar();
         repo.guardar(scrim);
         System.out.println("[evento] ScrimCancelado " + idScrim);
+        if (notificaciones != null) {
+            notificaciones.notificarScrimEstado(scrim, "CANCELADO");
+        }
     }
 }
 

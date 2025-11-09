@@ -12,8 +12,16 @@ public class Organizador extends Usuario {
         super(email, password, sancionesActivas);
     }
 
+    public Organizador(String email, String password, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
+        super(email, password, sancionesActivas, sancionesHistoricas);
+    }
+
     public Organizador(String id, String email, String password, List<SancionActiva> sancionesActivas) {
         super(id, email, password, sancionesActivas);
+    }
+
+    public Organizador(String id, String email, String password, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
+        super(id, email, password, sancionesActivas, sancionesHistoricas);
     }
 
     @Override

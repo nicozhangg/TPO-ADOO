@@ -4,6 +4,7 @@ import ar.edu.tpo.domain.Jugador;
 import ar.edu.tpo.domain.Organizador;
 import ar.edu.tpo.domain.SancionActiva;
 import ar.edu.tpo.domain.Usuario;
+import ar.edu.tpo.domain.SancionHistorica;
 import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.regiones.StateRegion;
 import ar.edu.tpo.domain.roles.StateRoles;
@@ -103,6 +104,20 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                     sanciones.add(sancionJson);
                 });
                 data.add("sancionesActivas", sanciones);
+
+                JsonArray sancionesHistoricas = new JsonArray();
+                usuario.getSancionesHistoricas().forEach(sancion -> {
+                    JsonObject sancionJson = new JsonObject();
+                    sancionJson.addProperty("motivo", sancion.getMotivo());
+                    if (sancion.getExpiraEn() != null) {
+                        sancionJson.addProperty("expiraEn", sancion.getExpiraEn().toString());
+                    }
+                    sancionJson.addProperty("levantadaEn", sancion.getLevantadaEn().toString());
+                    sancionesHistoricas.add(sancionJson);
+                });
+                if (!sancionesHistoricas.isEmpty()) {
+                    data.add("sancionesHistoricas", sancionesHistoricas);
+                }
                 root.add(usuario.getEmail(), data);
             }
 
@@ -162,6 +177,7 @@ public class JsonUsuarioRepository implements UsuarioRepository {
 
         Usuario usuario;
         List<SancionActiva> sanciones = leerSanciones(data);
+        List<SancionHistorica> sancionesHistoricas = leerSancionesHistoricas(data);
 
         if (TIPO_JUGADOR.equalsIgnoreCase(tipo)) {
             String rango = stringOrNull(data, "rango");
@@ -178,9 +194,9 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                 region = StateRegion.disponibles().get(0).getNombre();
             }
 
-            usuario = new Jugador(id, email, password, mmr, latencia, rango, rolPreferido, region, sanciones);
+            usuario = new Jugador(id, email, password, mmr, latencia, rango, rolPreferido, region, sanciones, sancionesHistoricas);
         } else {
-            usuario = new Organizador(id, email, password, sanciones);
+            usuario = new Organizador(id, email, password, sanciones, sancionesHistoricas);
         }
 
         if (id == null || id.isBlank()) {
@@ -237,6 +253,31 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                     }
                 } else if (element.isJsonPrimitive()) {
                     sanciones.add(new SancionActiva(element.getAsString(), null));
+                }
+            }
+        }
+        return sanciones;
+    }
+
+    private List<SancionHistorica> leerSancionesHistoricas(JsonObject data) {
+        List<SancionHistorica> sanciones = new ArrayList<>();
+        if (data.has("sancionesHistoricas") && data.get("sancionesHistoricas").isJsonArray()) {
+            for (JsonElement element : data.getAsJsonArray("sancionesHistoricas")) {
+                if (element == null || element.isJsonNull()) continue;
+                if (element.isJsonObject()) {
+                    JsonObject o = element.getAsJsonObject();
+                    String motivo = stringOrNull(o, "motivo");
+                    LocalDateTime expira = null;
+                    if (o.has("expiraEn") && !o.get("expiraEn").isJsonNull()) {
+                        expira = LocalDateTime.parse(o.get("expiraEn").getAsString());
+                    }
+                    LocalDateTime levantada = null;
+                    if (o.has("levantadaEn") && !o.get("levantadaEn").isJsonNull()) {
+                        levantada = LocalDateTime.parse(o.get("levantadaEn").getAsString());
+                    }
+                    if (motivo != null && levantada != null) {
+                        sanciones.add(new SancionHistorica(motivo, expira, levantada));
+                    }
                 }
             }
         }

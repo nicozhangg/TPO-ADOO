@@ -3,14 +3,20 @@ package ar.edu.tpo;
 import ar.edu.tpo.controller.ScrimController;
 import ar.edu.tpo.domain.Jugador;
 import ar.edu.tpo.domain.Organizador;
+import ar.edu.tpo.domain.SancionActiva;
+import ar.edu.tpo.domain.SancionHistorica;
 import ar.edu.tpo.domain.Usuario;
 import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.regiones.StateRegion;
 import ar.edu.tpo.domain.roles.StateRoles;
+import ar.edu.tpo.notification.MailStrategy;
+import ar.edu.tpo.notification.Notificador;
+import ar.edu.tpo.notification.NotificationService;
 import ar.edu.tpo.repository.JsonScrimRepository;
 import ar.edu.tpo.repository.JsonUsuarioRepository;
 import ar.edu.tpo.service.ConductaService;
 import ar.edu.tpo.service.MockUsuarioActualPort;
+import ar.edu.tpo.service.SancionSchedulerService;
 import ar.edu.tpo.service.UsuarioService;
 import ar.edu.tpo.service.scrim.ScrimCicloDeVidaService;
 import ar.edu.tpo.service.scrim.ScrimLobbyService;
@@ -18,6 +24,8 @@ import ar.edu.tpo.service.scrim.ScrimSchedulerService;
 import ar.edu.tpo.service.scrim.ScrimStatsService;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -30,21 +38,54 @@ public class Main {
         JsonScrimRepository scrimRepo = new JsonScrimRepository("data/scrims.json");
         JsonUsuarioRepository usuarioRepo = new JsonUsuarioRepository("data/usuarios.json");
 
-        usuarioService = new UsuarioService(usuarioRepo);
+        String defaultRemitente = "no-reply@escrims.local";
+        String defaultHost = "smtp.gmail.com";
+        String defaultPortStr = "587";
+        String defaultUser = "tposcrim@gmail.com"; // TODO: reemplazar con tu correo real
+        String defaultPass = "pfjp sgbk fzhv ghin";      // TODO: reemplazar con contraseña o token de app
+        String defaultFrom = "no-reply@escrims.local";
+        String defaultStartTls = "true";
+
+        String smtpHost = firstNonNull(System.getenv("SMTP_HOST"), defaultHost);
+        String smtpPort = firstNonNull(System.getenv("SMTP_PORT"), defaultPortStr);
+        String smtpUser = firstNonNull(System.getenv("SMTP_USER"), defaultUser);
+        String smtpPass = firstNonNull(System.getenv("SMTP_PASS"), defaultPass);
+        String smtpFrom = firstNonNull(System.getenv("SMTP_FROM"), defaultFrom);
+        String smtpStartTls = firstNonNull(System.getenv("SMTP_STARTTLS"), defaultStartTls);
+
+        MailStrategy mailStrategy;
+        try {
+            int port = Integer.parseInt(smtpPort);
+            boolean usarStartTls = Boolean.parseBoolean(smtpStartTls);
+            String remitente = (smtpFrom != null && !smtpFrom.isBlank()) ? smtpFrom : defaultRemitente;
+            mailStrategy = MailStrategy.smtp(remitente, smtpHost, port, smtpUser, smtpPass, usarStartTls);
+            System.out.println("[mail] SMTP configurado para host " + smtpHost + ":" + port);
+        } catch (NumberFormatException e) {
+            System.err.println("[mail] Puerto SMTP inválido (" + smtpPort + "). Se usará envío simulado.");
+            mailStrategy = MailStrategy.consola(defaultRemitente);
+        }
+        Notificador notificador = new Notificador(mailStrategy);
+        NotificationService notificationService = new NotificationService(notificador);
+
+        usuarioService = new UsuarioService(usuarioRepo, notificationService);
         ConductaService conductaService = new ConductaService(usuarioService);
-        ScrimCicloDeVidaService scrimLifecycleService = new ScrimCicloDeVidaService(scrimRepo, usuarioService);
-        ScrimLobbyService scrimLobbyService = new ScrimLobbyService(scrimRepo, usuarioService, conductaService);
+        ScrimCicloDeVidaService scrimLifecycleService = new ScrimCicloDeVidaService(scrimRepo, usuarioService, notificationService);
+        ScrimLobbyService scrimLobbyService = new ScrimLobbyService(scrimRepo, usuarioService, conductaService, notificationService);
         ScrimStatsService scrimStatsService = new ScrimStatsService(scrimRepo, usuarioService);
 
         usuarioActual = new MockUsuarioActualPort();
         scrimController = new ScrimController(scrimLifecycleService, scrimLobbyService, scrimStatsService, usuarioActual);
 
-        ScrimSchedulerService schedulerService = ScrimSchedulerService.getInstance(scrimRepo, scrimLifecycleService);
-        schedulerService.iniciar(30);
+        ScrimSchedulerService scrimSchedulerService = ScrimSchedulerService.getInstance(scrimRepo, scrimLifecycleService);
+        scrimSchedulerService.iniciar(30);
+
+        SancionSchedulerService sancionSchedulerService = SancionSchedulerService.getInstance(usuarioService);
+        sancionSchedulerService.iniciar(1);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n[sistema] Cerrando scheduler...");
-            schedulerService.detener();
+            scrimSchedulerService.detener();
+            sancionSchedulerService.detener();
         }));
 
         boolean salir = false;
@@ -79,6 +120,13 @@ public class Main {
         scanner.close();
     }
 
+    private static String firstNonNull(String value, String defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return value;
+    }
+
     private static void mostrarMenuLogin() {
         System.out.println("\n=== LOGIN ===");
         System.out.println("1. Iniciar sesión");
@@ -110,6 +158,7 @@ public class Main {
         System.out.println("2. Unirse a Scrim");
         System.out.println("3. Salir de Scrim");
         System.out.println("4. Confirmar participación en Scrim");
+        System.out.println("5. Actualizar perfil");
         System.out.println("0. Cerrar sesión");
         System.out.print("Seleccione una opción: ");
     }
@@ -129,6 +178,9 @@ public class Main {
         System.out.println("10. Cargar Resultado");
         System.out.println("11. Agregar Suplente");
         System.out.println("12. Agregar sanción a jugador");
+        System.out.println("13. Ver sanciones activas de un jugador");
+        System.out.println("14. Ver sanciones históricas de un jugador");
+        System.out.println("15. Levantar sanción de un jugador");
         System.out.println("0. Cerrar sesión");
         System.out.print("Seleccione una opción: ");
     }
@@ -180,9 +232,49 @@ public class Main {
                 String idScrimConfirmar = scanner.nextLine().trim();
                 scrimController.confirmar(idScrimConfirmar, jugador.getEmail());
             }
+            case 5 -> actualizarPerfilJugador(jugador);
             default -> System.out.println("Opción inválida.");
         }
         return false;
+    }
+
+    private static void actualizarPerfilJugador(Jugador jugador) {
+        System.out.println("\n=== ACTUALIZAR PERFIL ===");
+        System.out.println("Deja el campo vacío para mantener el valor actual.");
+
+        System.out.print("Nuevo password: ");
+        String nuevoPassword = scanner.nextLine().trim();
+        if (nuevoPassword.isBlank()) {
+            nuevoPassword = jugador.getPasswordHash();
+        }
+
+        int nuevoMmr = leerEnteroOpcional("Nuevo MMR", jugador.getMmr());
+        int nuevaLatencia = leerEnteroOpcional("Nueva latencia (ms)", jugador.getLatenciaMs());
+
+        StateRoles rolActual = jugador.getRolPreferido();
+        StateRoles nuevoRol = pedirRolOpcional(rolActual);
+
+        StateRegion regionActual = jugador.getRegion();
+        StateRegion nuevaRegion = pedirRegionOpcional(regionActual);
+
+        StateRangos nuevoRango = StateRangos.asignarRangoSegunPuntos(nuevoMmr);
+
+        Usuario actualizado = new Jugador(
+                jugador.getId(),
+                jugador.getEmail(),
+                nuevoPassword,
+                nuevoMmr,
+                nuevaLatencia,
+                nuevoRango.getNombre(),
+                nuevoRol.getNombre(),
+                nuevaRegion.getNombre(),
+                new ArrayList<>(jugador.getSancionesActivasSinDepurar()),
+                new ArrayList<>(jugador.getSancionesHistoricas())
+        );
+
+        usuarioService.actualizar(actualizado);
+        usuarioActual.establecerUsuarioActual(actualizado);
+        System.out.println("Perfil actualizado correctamente.");
     }
 
     private static boolean procesarOpcionOrganizer(int opcion) {
@@ -298,6 +390,69 @@ public class Main {
                     System.out.println("Error al registrar sanción: " + e.getMessage());
                 }
             }
+            case 13 -> {
+                String email = leerNoVacio("Email del jugador: ");
+                try {
+                    List<SancionActiva> activas = usuarioService.obtenerSancionesActivas(email);
+                    if (activas.isEmpty()) {
+                        System.out.println("No hay sanciones activas para " + email);
+                    } else {
+                        System.out.println("Sanciones activas para " + email + ":");
+                        for (int i = 0; i < activas.size(); i++) {
+                            SancionActiva sancion = activas.get(i);
+                            String expira = sancion.getExpiraEn() != null ? sancion.getExpiraEn().toString() : "sin fecha de expiración";
+                            System.out.println((i + 1) + ". " + sancion.getMotivo() + " (expira: " + expira + ")");
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error al listar sanciones: " + e.getMessage());
+                }
+            }
+            case 14 -> {
+                String email = leerNoVacio("Email del jugador: ");
+                try {
+                    List<SancionHistorica> historicas = usuarioService.obtenerSancionesHistoricas(email);
+                    if (historicas.isEmpty()) {
+                        System.out.println("No hay sanciones históricas para " + email);
+                    } else {
+                        System.out.println("Sanciones históricas para " + email + ":");
+                        for (int i = 0; i < historicas.size(); i++) {
+                            SancionHistorica sancion = historicas.get(i);
+                            String expiro = sancion.getExpiraEn() != null ? sancion.getExpiraEn().toString() : "sin fecha de expiración";
+                            System.out.println((i + 1) + ". " + sancion.getMotivo() + " (expiraba: " + expiro + ", levantada: " + sancion.getLevantadaEn() + ")");
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error al listar sanciones: " + e.getMessage());
+                }
+            }
+            case 15 -> {
+                String email = leerNoVacio("Email del jugador: ");
+                try {
+                    List<SancionActiva> activas = usuarioService.obtenerSancionesActivas(email);
+                    if (activas.isEmpty()) {
+                        System.out.println("No hay sanciones activas para " + email);
+                        break;
+                    }
+                    System.out.println("Sanciones activas para " + email + ":");
+                    for (int i = 0; i < activas.size(); i++) {
+                        SancionActiva sancion = activas.get(i);
+                        String expira = sancion.getExpiraEn() != null ? sancion.getExpiraEn().toString() : "sin fecha de expiración";
+                        System.out.println((i + 1) + ". " + sancion.getMotivo() + " (expira: " + expira + ")");
+                    }
+                    int seleccion = leerEnteroConMensaje("Seleccione la sanción a levantar (1-" + activas.size() + "): ");
+                    if (seleccion < 1 || seleccion > activas.size()) {
+                        System.out.println("Selección inválida.");
+                        break;
+                    }
+                    var levantada = usuarioService.levantarSancion(email, seleccion - 1);
+                    String expiro = levantada.getExpiraEn() != null ? levantada.getExpiraEn().toString() : "sin fecha de expiración";
+                    System.out.println("Sanción '" + levantada.getMotivo() + "' levantada para " + email +
+                            " (expiraba: " + expiro + ", levantada: " + levantada.getLevantadaEn() + ")");
+                } catch (Exception e) {
+                    System.out.println("Error al levantar sanción: " + e.getMessage());
+                }
+            }
             default -> System.out.println("Opción inválida.");
         }
         return false;
@@ -338,6 +493,21 @@ public class Main {
         return leerEntero();
     }
 
+    private static int leerEnteroOpcional(String mensaje, int valorActual) {
+        while (true) {
+            System.out.print(mensaje + " (actual " + valorActual + "): ");
+            String input = scanner.nextLine().trim();
+            if (input.isBlank()) {
+                return valorActual;
+            }
+            try {
+                return Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Por favor ingrese un número válido o deje vacío para mantener el actual.");
+            }
+        }
+    }
+
     private static StateRoles pedirRol() {
         while (true) {
             System.out.println("Roles disponibles:");
@@ -346,6 +516,26 @@ public class Main {
             }
             String rolStr = leerNoVacio("Rol preferido: ");
             StateRoles rol = StateRoles.fromNombre(rolStr);
+            if (rol != null) {
+                return rol;
+            }
+            System.out.println("Rol inválido. Intente nuevamente.");
+        }
+    }
+
+    private static StateRoles pedirRolOpcional(StateRoles actual) {
+        StateRoles actualNoNulo = actual != null ? actual : StateRoles.disponibles().get(0);
+        while (true) {
+            System.out.println("Roles disponibles (actual: " + actualNoNulo.getNombre() + "):");
+            for (StateRoles rol : StateRoles.disponibles()) {
+                System.out.println("- " + rol.getNombre());
+            }
+            System.out.print("Rol preferido (ENTER para mantener): ");
+            String input = scanner.nextLine().trim();
+            if (input.isBlank()) {
+                return actualNoNulo;
+            }
+            StateRoles rol = StateRoles.fromNombre(input);
             if (rol != null) {
                 return rol;
             }
@@ -365,6 +555,34 @@ public class Main {
                 return disponibles.get(opcion - 1);
             }
             System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static StateRegion pedirRegionOpcional(StateRegion actual) {
+        StateRegion actualNoNulo = actual != null ? actual : StateRegion.disponibles().get(0);
+        while (true) {
+            var disponibles = StateRegion.disponibles();
+            System.out.println("Regiones disponibles (actual: " + actualNoNulo.getNombre() + "):");
+            for (int i = 0; i < disponibles.size(); i++) {
+                System.out.println((i + 1) + ". " + disponibles.get(i).getNombre());
+            }
+            System.out.print("Seleccione una región (ENTER para mantener): ");
+            String input = scanner.nextLine().trim();
+            if (input.isBlank()) {
+                return actualNoNulo;
+            }
+            StateRegion region = StateRegion.fromNombre(input);
+            if (region != null) {
+                return region;
+            }
+            try {
+                int opcion = Integer.parseInt(input);
+                if (opcion >= 1 && opcion <= disponibles.size()) {
+                    return disponibles.get(opcion - 1);
+                }
+            } catch (NumberFormatException ignored) {
+            }
+            System.out.println("Región inválida. Intente nuevamente.");
         }
     }
 

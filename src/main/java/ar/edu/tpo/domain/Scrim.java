@@ -1,5 +1,7 @@
 package ar.edu.tpo.domain;
 
+import ar.edu.tpo.domain.rangos.StateRangos;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -212,8 +214,8 @@ public class Scrim {
 
     @Override public String toString(){
         String ventana = (inicio != null && fin != null) ? (" " + inicio + "→" + fin) : " (sin agenda)";
-        return "Scrim{id='%s', juego='%s', formato='%s', region='%s', cupo=%d/equipo, latenciaMax=%dms, modalidad='%s', equipo1=%d/%d, equipo2=%d/%d, estado=%s%s}"
-                .formatted(id, juego, formato, region, cupo,
+        return "Scrim{id='%s', juego='%s', formato='%s', region='%s', rango=%s-%s, cupo=%d/equipo, latenciaMax=%dms, modalidad='%s', equipo1=%d/%d, equipo2=%d/%d, estado=%s%s}"
+                .formatted(id, juego, formato, region, nombreRangoPara(rangoMin), nombreRangoPara(rangoMax), cupo,
                     latenciaMaxMs, modalidad,
                     equipo1.getCantidadJugadores(), cupo,
                     equipo2.getCantidadJugadores(), cupo,
@@ -221,4 +223,12 @@ public class Scrim {
     }
 
     // Serialización JSON delegada a ar.edu.tpo.repository.json.ScrimJsonAdapter
+
+    private String nombreRangoPara(int puntos) {
+        return StateRangos.disponibles().stream()
+                .filter(r -> puntos >= r.getMinimo() && puntos <= r.getMaximo())
+                .map(StateRangos::getNombre)
+                .findFirst()
+                .orElse(puntos + " MMR");
+    }
 }

@@ -1,13 +1,17 @@
 package ar.edu.tpo.service.scrim;
 
+import ar.edu.tpo.domain.Jugador;
 import ar.edu.tpo.domain.SancionActiva;
 import ar.edu.tpo.domain.Scrim;
+import ar.edu.tpo.domain.Usuario;
+import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.estado.BuscandoJugadoresState;
 import ar.edu.tpo.domain.estado.ConfirmadoState;
 import ar.edu.tpo.domain.estado.LobbyArmadoState;
 import ar.edu.tpo.repository.ScrimRepository;
 import ar.edu.tpo.service.ConductaService;
 import ar.edu.tpo.service.UsuarioService;
+import ar.edu.tpo.notification.NotificationService;
 
 import java.util.Objects;
 
@@ -19,43 +23,37 @@ public class ScrimLobbyService {
     private final ScrimRepository repo;
     private final UsuarioService usuarios;
     private final ConductaService conductaService;
+    private final NotificationService notificaciones;
 
-    public ScrimLobbyService(ScrimRepository repo, UsuarioService usuarios, ConductaService conductaService) {
+    public ScrimLobbyService(ScrimRepository repo, UsuarioService usuarios, ConductaService conductaService, NotificationService notificaciones) {
         this.repo = Objects.requireNonNull(repo);
         this.usuarios = Objects.requireNonNull(usuarios);
         this.conductaService = Objects.requireNonNull(conductaService);
+        this.notificaciones = notificaciones;
     }
 
     public void unirse(String idScrim, String emailJugador) {
         var usuario = usuarios.buscar(emailJugador);
-        if (usuario.tieneSancionesActivas()) {
-            String motivos = usuario.getSancionesActivas()
-                    .stream()
-                    .map(SancionActiva::toString)
-                    .reduce((a, b) -> a + " @ " + b)
-                    .orElse("Desconocido");
-            throw new SecurityException("No puedes unirte a scrims: sanciones activas " + motivos);
-        }
         Scrim scrim = repo.buscarPorId(idScrim);
+        validarPuedeUnirse(usuario, scrim);
         scrim.agregarJugador(emailJugador);
         repo.guardar(scrim);
         System.out.println("[evento] JugadorUnido scrim=" + idScrim + " jugador=" + emailJugador);
+        if (notificaciones != null) {
+            notificaciones.notificarUnionScrim(scrim, emailJugador);
+        }
     }
 
     public void unirseAEquipo(String idScrim, String emailJugador, String nombreEquipo) {
         var usuario = usuarios.buscar(emailJugador);
-        if (usuario.tieneSancionesActivas()) {
-            String motivos = usuario.getSancionesActivas()
-                    .stream()
-                    .map(SancionActiva::toString)
-                    .reduce((a, b) -> a + " @ " + b)
-                    .orElse("Desconocido");
-            throw new SecurityException("No puedes unirte a scrims: sanciones activas " + motivos);
-        }
         Scrim scrim = repo.buscarPorId(idScrim);
+        validarPuedeUnirse(usuario, scrim);
         scrim.agregarJugador(emailJugador, nombreEquipo);
         repo.guardar(scrim);
         System.out.println("[evento] JugadorUnido scrim=" + idScrim + " jugador=" + emailJugador + " equipo=" + nombreEquipo);
+        if (notificaciones != null) {
+            notificaciones.notificarUnionScrim(scrim, emailJugador);
+        }
     }
 
     public void salir(String idScrim, String emailJugador) {
@@ -106,6 +104,43 @@ public class ScrimLobbyService {
         scrim.agregarAListaEspera(emailJugador);
         repo.guardar(scrim);
         System.out.println("[evento] SuplenteAgregado scrim=" + idScrim + " jugador=" + emailJugador);
+    }
+
+    private void validarPuedeUnirse(Usuario usuario, Scrim scrim) {
+        if (usuario.tieneSancionesActivas()) {
+            String motivos = usuario.getSancionesActivas()
+                    .stream()
+                    .map(SancionActiva::toString)
+                    .reduce((a, b) -> a + " @ " + b)
+                    .orElse("Desconocido");
+            throw new SecurityException("No puedes unirte a scrims: sanciones activas " + motivos);
+        }
+
+        if (!(usuario instanceof Jugador jugador)) {
+            throw new SecurityException("Solo los jugadores pueden unirse a scrims");
+        }
+
+        if (jugador.getLatenciaMs() > scrim.getLatenciaMaxMs()) {
+            throw new IllegalStateException("Tu latencia (" + jugador.getLatenciaMs() + "ms) supera el máximo permitido (" + scrim.getLatenciaMaxMs() + "ms)");
+        }
+
+        if (!jugador.getRegionNombre().equalsIgnoreCase(scrim.getRegion())) {
+            throw new IllegalStateException("Tu región (" + jugador.getRegionNombre() + ") no coincide con la región de la scrim (" + scrim.getRegion() + ")");
+        }
+
+        int mmr = jugador.getMmr();
+        if (mmr < scrim.getRangoMin() || mmr > scrim.getRangoMax()) {
+            throw new IllegalStateException("Tu rango (" + nombreRango(mmr) + ") está fuera del rango permitido (" +
+                    nombreRango(scrim.getRangoMin()) + " - " + nombreRango(scrim.getRangoMax()) + ")");
+        }
+    }
+
+    private String nombreRango(int puntos) {
+        return StateRangos.disponibles().stream()
+                .filter(r -> puntos >= r.getMinimo() && puntos <= r.getMaximo())
+                .map(StateRangos::getNombre)
+                .findFirst()
+                .orElse(puntos + " MMR");
     }
 }
 

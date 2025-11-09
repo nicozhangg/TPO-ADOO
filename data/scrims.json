@@ -1,64 +1,40 @@
 {
-  "3b6f6b8b-a997-4443-a4a6-18ddb3baaf78": {
-    "id": "3b6f6b8b-a997-4443-a4a6-18ddb3baaf78",
-    "juego": "Valorant",
-    "emailCreador": "a@a.com",
-    "rangoMin": 301,
-    "rangoMax": 900,
-    "cupo": 3,
-    "formato": "3v3",
-    "region": "Europa",
-    "latenciaMaxMs": 100,
-    "modalidad": "práctica",
-    "estado": "BUSCANDO_JUGADORES",
-    "equipo1": {
-      "nombre": "Equipo A",
-      "jugadores": []
-    },
-    "equipo2": {
-      "nombre": "Equipo B",
-      "jugadores": []
-    },
-    "jugadores": [],
-    "confirmacionesEquipos": {
-      "Equipo A": false,
-      "Equipo B": false
-    },
-    "confirmaciones": {},
-    "estadisticas": [],
-    "listaEspera": []
-  },
-  "db7b7496-dbed-4563-aeef-ffb8c21a7b9f": {
-    "id": "db7b7496-dbed-4563-aeef-ffb8c21a7b9f",
-    "juego": "Valorant",
+  "af9d8603-b797-420e-a8ca-ec38b694f297": {
+    "id": "af9d8603-b797-420e-a8ca-ec38b694f297",
+    "juego": "Val",
     "emailCreador": "a@a.com",
     "rangoMin": 301,
     "rangoMax": 900,
     "cupo": 3,
     "formato": "3v3",
     "region": "America",
-    "latenciaMaxMs": 190,
-    "modalidad": "casual",
+    "latenciaMaxMs": 10,
+    "modalidad": "ranked-like",
     "estado": "BUSCANDO_JUGADORES",
+    "inicio": "2025-11-09T17:00",
+    "fin": "2025-11-09T19:00",
     "equipo1": {
       "nombre": "Equipo A",
-      "jugadores": []
+      "jugadores": [
+        "lp366841@gmail.com",
+        "c@c.com"
+      ]
     },
     "equipo2": {
       "nombre": "Equipo B",
-      "jugadores": [
-        "b@b.com"
-      ]
+      "jugadores": []
     },
     "jugadores": [
-      "b@b.com"
+      "lp366841@gmail.com",
+      "c@c.com"
     ],
     "confirmacionesEquipos": {
       "Equipo A": false,
       "Equipo B": false
     },
     "confirmaciones": {
-      "b@b.com": false
+      "lp366841@gmail.com": false,
+      "c@c.com": false
     },
     "estadisticas": [],
     "listaEspera": []
