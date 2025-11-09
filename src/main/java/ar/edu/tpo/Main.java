@@ -4,6 +4,9 @@ import ar.edu.tpo.controller.ScrimController;
 import ar.edu.tpo.domain.Jugador;
 import ar.edu.tpo.domain.Organizador;
 import ar.edu.tpo.domain.Usuario;
+import ar.edu.tpo.domain.rangos.StateRangos;
+import ar.edu.tpo.domain.regiones.StateRegion;
+import ar.edu.tpo.domain.roles.StateRoles;
 import ar.edu.tpo.repository.JsonScrimRepository;
 import ar.edu.tpo.repository.JsonUsuarioRepository;
 import ar.edu.tpo.service.ConductaService;
@@ -51,7 +54,8 @@ public class Main {
                 int opcion = leerEntero();
                 switch (opcion) {
                     case 1 -> hacerLogin();
-                    case 0-> {
+                    case 2 -> registrarUsuario();
+                    case 0 -> {
                         salir = true;
                         System.out.println("¡Hasta luego!");
                     }
@@ -77,16 +81,17 @@ public class Main {
     private static void mostrarMenuLogin() {
         System.out.println("\n=== LOGIN ===");
         System.out.println("1. Iniciar sesión");
+        System.out.println("2. Registrarse");
         System.out.println("0. Salir");
         System.out.print("Seleccione una opción: ");
     }
 
     private static void hacerLogin() {
-        System.out.print("Ingrese su email: ");
-        String email = scanner.nextLine().trim();
+        String email = leerNoVacio("Ingrese su email: ");
+        String password = leerNoVacio("Ingrese su contraseña: ");
 
         try {
-            Usuario usuario = usuarioService.buscar(email);
+            Usuario usuario = usuarioService.login(email, password);
             usuarioActual.establecerUsuarioActual(usuario);
             System.out.println("¡Bienvenido, " + usuario.getEmail() + "! (Tipo: " + usuario.getTipo() + ")");
         } catch (IllegalArgumentException e) {
@@ -304,6 +309,95 @@ public class Main {
         } catch (NumberFormatException e) {
             System.out.print("Por favor ingrese un número válido: ");
             return leerDouble();
+        }
+    }
+
+    private static String leerNoVacio(String mensaje) {
+        System.out.print(mensaje);
+        String value = scanner.nextLine().trim();
+        while (value.isEmpty()) {
+            System.out.print("El valor no puede ser vacío. Intente nuevamente: ");
+            value = scanner.nextLine().trim();
+        }
+        return value;
+    }
+
+    private static int leerEnteroConMensaje(String mensaje) {
+        System.out.print(mensaje);
+        return leerEntero();
+    }
+
+    private static StateRoles pedirRol() {
+        while (true) {
+            System.out.println("Roles disponibles:");
+            for (StateRoles rol : StateRoles.disponibles()) {
+                System.out.println("- " + rol.getNombre());
+            }
+            String rolStr = leerNoVacio("Rol preferido: ");
+            StateRoles rol = StateRoles.fromNombre(rolStr);
+            if (rol != null) {
+                return rol;
+            }
+            System.out.println("Rol inválido. Intente nuevamente.");
+        }
+    }
+
+    private static StateRegion pedirRegion() {
+        while (true) {
+            System.out.println("Regiones disponibles:");
+            for (StateRegion region : StateRegion.disponibles()) {
+                System.out.println("- " + region.getNombre());
+            }
+            String regionStr = leerNoVacio("Región: ");
+            StateRegion region = StateRegion.fromNombre(regionStr);
+            if (region != null) {
+                return region;
+            }
+            System.out.println("Región inválida. Intente nuevamente.");
+        }
+    }
+
+    private static void registrarUsuario() {
+        System.out.println("\n=== REGISTRO DE USUARIO ===");
+        System.out.println("1. Registrar Organizador");
+        System.out.println("2. Registrar Jugador");
+        System.out.print("Seleccione una opción: ");
+        int opcion = leerEntero();
+
+        switch (opcion) {
+            case 1 -> registrarOrganizadorFlow();
+            case 2 -> registrarJugadorFlow();
+            default -> System.out.println("Opción inválida.");
+        }
+    }
+
+    private static void registrarOrganizadorFlow() {
+        String email = leerNoVacio("Email del organizador: ");
+        String password = leerNoVacio("Contraseña: ");
+        try {
+            usuarioService.registrarOrganizador(email, password);
+            System.out.println("Organizador registrado exitosamente.");
+        } catch (Exception e) {
+            System.out.println("Error al registrar organizador: " + e.getMessage());
+        }
+    }
+
+    private static void registrarJugadorFlow() {
+        String email = leerNoVacio("Email del jugador: ");
+        String password = leerNoVacio("Contraseña: ");
+        System.out.println("Ingrese datos del perfil competitivo:");
+        int mmr = leerEnteroConMensaje("MMR (número entero): ");
+        int latencia = leerEnteroConMensaje("Latencia promedio (ms): ");
+
+        StateRoles rolPreferido = pedirRol();
+        StateRegion region = pedirRegion();
+        StateRangos rango = StateRangos.asignarRangoSegunPuntos(mmr);
+
+        try {
+            usuarioService.registrarJugador(email, password, mmr, latencia, rango, rolPreferido, region);
+            System.out.println("Jugador registrado exitosamente. Rango asignado: " + rango.getNombre());
+        } catch (Exception e) {
+            System.out.println("Error al registrar jugador: " + e.getMessage());
         }
     }
 }

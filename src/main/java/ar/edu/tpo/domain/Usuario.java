@@ -9,31 +9,33 @@ import java.util.UUID;
 public abstract class Usuario {
     private final String id;
     private final String email;
+    private final String passwordHash;
     private final int mmr;
     private final int latenciaMs;
     private final List<String> sancionesActivas;
     private Double kdaHistorico; // opcional
 
-    protected Usuario(String email, int mmr, int latenciaMs) {
-        this(null, email, mmr, latenciaMs, null);
+    protected Usuario(String email, String passwordHash, int mmr, int latenciaMs) {
+        this(null, email, passwordHash, mmr, latenciaMs, null);
     }
 
-    protected Usuario(String email, int mmr, int latenciaMs, List<String> sancionesActivas) {
-        this(null, email, mmr, latenciaMs, sancionesActivas);
+    protected Usuario(String email, String passwordHash, int mmr, int latenciaMs, List<String> sancionesActivas) {
+        this(null, email, passwordHash, mmr, latenciaMs, sancionesActivas);
     }
 
-    protected Usuario(String email, List<String> sancionesActivas) {
-        this(null, email, 0, 0, sancionesActivas);
+    protected Usuario(String email, String passwordHash, List<String> sancionesActivas) {
+        this(null, email, passwordHash, 0, 0, sancionesActivas);
     }
 
-    protected Usuario(String id, String email, List<String> sancionesActivas) {
-        this(id, email, 0, 0, sancionesActivas);
+    protected Usuario(String id, String email, String passwordHash, List<String> sancionesActivas) {
+        this(id, email, passwordHash, 0, 0, sancionesActivas);
     }
 
-    protected Usuario(String id, String email, int mmr, int latenciaMs, List<String> sancionesActivas) {
+    protected Usuario(String id, String email, String passwordHash, int mmr, int latenciaMs, List<String> sancionesActivas) {
         String effectiveId = (id == null || id.isBlank()) ? UUID.randomUUID().toString() : id;
         this.id = effectiveId;
         this.email = Objects.requireNonNull(email, "email requerido");
+        this.passwordHash = Objects.requireNonNull(passwordHash, "password requerido");
         this.mmr = mmr;
         this.latenciaMs = latenciaMs;
         this.sancionesActivas = new ArrayList<>();
@@ -44,6 +46,7 @@ public abstract class Usuario {
 
     public String getId() { return id; }
     public String getEmail() { return email; }
+    public String getPasswordHash() { return passwordHash; }
     public int getMmr() { return mmr; }
     public int getLatenciaMs() { return latenciaMs; }
     public Double getKdaHistorico() { return kdaHistorico; }

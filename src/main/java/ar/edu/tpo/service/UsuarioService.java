@@ -22,17 +22,18 @@ public class UsuarioService {
         repo.guardar(usuario);
     }
 
-    public void registrarOrganizador(String email){
-        registrar(new Organizador(email));
+    public void registrarOrganizador(String email, String password){
+        registrar(new Organizador(email, password));
     }
 
     public void registrarJugador(String email,
+                                 String password,
                                  int mmr,
                                  int latenciaMs,
                                  StateRangos rango,
                                  StateRoles rolPreferido,
                                  StateRegion region){
-        registrar(new Jugador(email, mmr, latenciaMs, rango, rolPreferido, region));
+        registrar(new Jugador(email, password, mmr, latenciaMs, rango, rolPreferido, region));
     }
 
     public List<Usuario> listar(){
@@ -49,5 +50,13 @@ public class UsuarioService {
         Usuario usuario = buscar(email);
         usuario.agregarSancion(motivo);
         repo.actualizar(usuario);
+    }
+
+    public Usuario login(String email, String password){
+        Usuario usuario = repo.buscar(email);
+        if (usuario == null || !usuario.getPasswordHash().equals(password)) {
+            throw new IllegalArgumentException("Credenciales inválidas");
+        }
+        return usuario;
     }
 }

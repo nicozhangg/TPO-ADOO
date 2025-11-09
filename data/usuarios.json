@@ -3,12 +3,14 @@
     "tipo": "Organizador",
     "id": "ORG-1",
     "email": "a@a.com",
+    "passwordHash": "admin123",
     "sancionesActivas": []
   },
   "b@b.com": {
     "tipo": "Jugador",
     "id": "JUG-1",
     "email": "b@b.com",
+    "passwordHash": "player123",
     "mmr": 150,
     "latenciaMs": 7,
     "rango": "Hierro",
@@ -20,6 +22,7 @@
     "tipo": "Jugador",
     "id": "JUG-2",
     "email": "c@c.com",
+    "passwordHash": "player123",
     "mmr": 150,
     "latenciaMs": 7,
     "rango": "Hierro",
@@ -31,10 +34,23 @@
     "tipo": "Jugador",
     "id": "JUG-3",
     "email": "d@d.com",
+    "passwordHash": "player123",
     "mmr": 200,
     "latenciaMs": 150,
     "rango": "Bronce",
     "rolPreferido": "Controlador",
+    "region": "America",
+    "sancionesActivas": []
+  },
+  "e@e.com": {
+    "tipo": "Jugador",
+    "id": "638c5944-d449-4f67-8ef8-af4eef72d687",
+    "email": "e@e.com",
+    "passwordHash": "player123",
+    "mmr": 1500,
+    "latenciaMs": 10,
+    "rango": "Platino",
+    "rolPreferido": "Duelista",
     "region": "America",
     "sancionesActivas": []
   }

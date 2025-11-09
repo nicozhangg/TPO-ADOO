@@ -75,6 +75,7 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                 data.addProperty("tipo", usuario.getTipo());
                 data.addProperty("id", usuario.getId());
                 data.addProperty("email", usuario.getEmail());
+                data.addProperty("passwordHash", usuario.getPasswordHash());
                 if (usuario instanceof Jugador jugador) {
                     data.addProperty("mmr", usuario.getMmr());
                     data.addProperty("latenciaMs", usuario.getLatenciaMs());
@@ -132,6 +133,10 @@ public class JsonUsuarioRepository implements UsuarioRepository {
     private Usuario mapearUsuario(JsonObject data) {
         String email = stringOrNull(data, "email");
         String id = stringOrNull(data, "id");
+        String password = stringOrNull(data, "passwordHash");
+        if (password == null) {
+            password = "";
+        }
         int mmr = intOrDefault(data, "mmr", 0);
         int latencia = intOrDefault(data, "latenciaMs", 0);
         Double kda = data.has("kdaHistorico") && !data.get("kdaHistorico").isJsonNull()
@@ -166,9 +171,9 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                 region = StateRegion.disponibles().get(0).getNombre();
             }
 
-            usuario = new Jugador(id, email, mmr, latencia, rango, rolPreferido, region, sanciones);
+            usuario = new Jugador(id, email, password, mmr, latencia, rango, rolPreferido, region, sanciones);
         } else {
-            usuario = new Organizador(id, email, sanciones);
+            usuario = new Organizador(id, email, password, sanciones);
         }
 
         if (id == null || id.isBlank()) {
