@@ -16,7 +16,12 @@
     "rango": "Hierro",
     "rolPreferido": "Duelista",
     "region": "America",
-    "sancionesActivas": []
+    "sancionesActivas": [
+      {
+        "motivo": "Abandono",
+        "expiraEn": "2025-11-09T02:14:42.239303700"
+      }
+    ]
   },
   "c@c.com": {
     "tipo": "Jugador",

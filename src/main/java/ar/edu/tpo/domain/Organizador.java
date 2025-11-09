@@ -5,14 +5,14 @@ import java.util.List;
 public class Organizador extends Usuario {
 
     public Organizador(String email, String password) {
-        super(email, password, (List<String>) null);
+        super(email, password, (List<SancionActiva>) null);
     }
 
-    public Organizador(String email, String password, List<String> sancionesActivas) {
+    public Organizador(String email, String password, List<SancionActiva> sancionesActivas) {
         super(email, password, sancionesActivas);
     }
 
-    public Organizador(String id, String email, String password, List<String> sancionesActivas) {
+    public Organizador(String id, String email, String password, List<SancionActiva> sancionesActivas) {
         super(id, email, password, sancionesActivas);
     }
 

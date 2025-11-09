@@ -47,15 +47,15 @@ public class ScrimController {
     // ================== CREAR ==================
 
     /** Compat (cupo=2, sin fechas, valores por defecto) */
-    public void crear(String juego, String emailCreador, String emailRival, int rangoMin, int rangoMax){
+    public void crear(String juego, String emailCreador, int rangoMin, int rangoMax){
         validarPermisoOrganizer();
-        var s = lifecycleService.crearScrim(juego, emailCreador, emailRival, rangoMin, rangoMax,
+        var s = lifecycleService.crearScrim(juego, emailCreador, rangoMin, rangoMax,
                 2, "2v2", "REGION_DESCONOCIDA", 100, "casual", null, null);
         System.out.println("Scrim creado: " + s.getId());
     }
 
     /** Nuevo: crear con parámetros completos y fechas opcionales */
-    public void crear(String juego, String emailCreador, String emailRival, int rangoMin, int rangoMax,
+    public void crear(String juego, String emailCreador, int rangoMin, int rangoMax,
                       int cupo, String formato, String region, int latenciaMaxMs,
                       String modalidad,
                       String inicioStr, String finStr) {
@@ -65,7 +65,7 @@ public class ScrimController {
         ZonedDateTime finZoned = ArgentinaTimeZone.parsear(finStr);
         LocalDateTime ini = (iniZoned != null) ? ArgentinaTimeZone.aLocalDateTime(iniZoned) : null;
         LocalDateTime fin = (finZoned != null) ? ArgentinaTimeZone.aLocalDateTime(finZoned) : null;
-        var s = lifecycleService.crearScrim(juego, emailCreador, emailRival,
+        var s = lifecycleService.crearScrim(juego, emailCreador,
                 rangoMin, rangoMax, cupo,
                 formato, region, latenciaMaxMs,
                 modalidad,

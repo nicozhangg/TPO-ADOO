@@ -21,7 +21,7 @@ public class ScrimCicloDeVidaService {
         this.usuarios = Objects.requireNonNull(usuarios);
     }
 
-    public Scrim crearScrim(String juego, String emailCreador, String emailRival,
+    public Scrim crearScrim(String juego, String emailCreador,
                             int rangoMin, int rangoMax, int cupo,
                             String formato, String region, int latenciaMaxMs,
                             String modalidad,
@@ -40,10 +40,9 @@ public class ScrimCicloDeVidaService {
         }
 
         usuarios.buscar(emailCreador);
-        usuarios.buscar(emailRival);
 
         Scrim scrim = new Scrim(
-                juego, emailCreador, emailRival,
+                juego, emailCreador,
                 rangoMin, rangoMax, cupo,
                 formato.trim(), region.trim(), latenciaMaxMs,
                 modalidad.trim()
@@ -59,9 +58,9 @@ public class ScrimCicloDeVidaService {
     }
 
     /** Compatibilidad: creación simple con valores por defecto. */
-    public Scrim crearScrim(String juego, String emailCreador, String emailRival,
+    public Scrim crearScrim(String juego, String emailCreador,
                             int rangoMin, int rangoMax) {
-        return crearScrim(juego, emailCreador, emailRival, rangoMin, rangoMax,
+        return crearScrim(juego, emailCreador, rangoMin, rangoMax,
                 2, "2v2", "REGION_DESCONOCIDA", 100, "casual",
                 null, null);
     }

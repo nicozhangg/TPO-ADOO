@@ -8,6 +8,7 @@ import ar.edu.tpo.domain.regiones.StateRegion;
 import ar.edu.tpo.domain.roles.StateRoles;
 import ar.edu.tpo.repository.UsuarioRepository;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,9 +47,9 @@ public class UsuarioService {
         return u;
     }
 
-    public void agregarSancion(String email, String motivo) {
+    public void agregarSancion(String email, String motivo, Duration duracion) {
         Usuario usuario = buscar(email);
-        usuario.agregarSancion(motivo);
+        usuario.agregarSancion(motivo, duracion);
         repo.actualizar(usuario);
     }
 

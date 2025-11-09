@@ -17,6 +17,7 @@ import ar.edu.tpo.service.scrim.ScrimLobbyService;
 import ar.edu.tpo.service.scrim.ScrimSchedulerService;
 import ar.edu.tpo.service.scrim.ScrimStatsService;
 
+import java.time.Duration;
 import java.util.Scanner;
 
 public class Main {
@@ -127,6 +128,7 @@ public class Main {
         System.out.println("9. Cancelar Scrim");
         System.out.println("10. Cargar Resultado");
         System.out.println("11. Agregar Suplente");
+        System.out.println("12. Agregar sanción a jugador");
         System.out.println("0. Cerrar sesión");
         System.out.print("Seleccione una opción: ");
     }
@@ -196,29 +198,27 @@ public class Main {
             case 2 -> {
                 System.out.print("Juego: ");
                 String juego = scanner.nextLine().trim();
-                System.out.print("Email creador: ");
-                String emailCreador = scanner.nextLine().trim();
-                System.out.print("Email rival: ");
-                String emailRival = scanner.nextLine().trim();
-                System.out.print("Rango mínimo: ");
-                int rangoMin = leerEntero();
-                System.out.print("Rango máximo: ");
-                int rangoMax = leerEntero();
-                System.out.print("Jugadores por equipo (p.ej. 5 para 5v5): ");
-                int cupo = leerEntero();
-                System.out.print("Formato (ej. 5v5, 3v3): ");
-                String formato = scanner.nextLine().trim();
-                System.out.print("Región/servidor: ");
-                String region = scanner.nextLine().trim();
+                String emailCreador = usuarioActual.obtenerEmailUsuarioActual();
+                StateRangos rangoMinObj = pedirRango("mínimo");
+                StateRangos rangoMaxObj = pedirRango("máximo");
+                int rangoMin = rangoMinObj.getMinimo();
+                int rangoMax = rangoMaxObj.getMaximo();
+                if (rangoMax < rangoMin) {
+                    int tmp = rangoMin;
+                    rangoMin = rangoMax;
+                    rangoMax = tmp;
+                }
+                int cupo = seleccionarCupo();
+                String formato = seleccionarFormato(cupo);
+                String region = seleccionarRegion();
                 System.out.print("Latencia máxima (ms): ");
                 int latenciaMax = leerEntero();
-                System.out.print("Modalidad (ranked-like / casual / práctica): ");
-                String modalidad = scanner.nextLine().trim();
+                String modalidad = seleccionarModalidad();
                 System.out.print("Inicio (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
                 String inicioStr = scanner.nextLine().trim();
                 System.out.print("Fin (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
                 String finStr = scanner.nextLine().trim();
-                scrimController.crear(juego, emailCreador, emailRival, rangoMin, rangoMax,
+                scrimController.crear(juego, emailCreador, rangoMin, rangoMax,
                         cupo, formato, region, latenciaMax, modalidad,
                         inicioStr, finStr);
             }
@@ -287,6 +287,17 @@ public class Main {
                 String emailJugador = scanner.nextLine().trim();
                 scrimController.agregarSuplente(idScrim, emailJugador);
             }
+            case 12 -> {
+                String email = leerNoVacio("Email del jugador a sancionar: ");
+                String motivo = seleccionarMotivoSancion();
+                int minutos = leerEnteroConMensaje("Duración de la sanción en minutos: ");
+                try {
+                    usuarioService.agregarSancion(email, motivo, Duration.ofMinutes(minutos));
+                    System.out.println("Sanción registrada para " + email + " con motivo " + motivo);
+                } catch (Exception e) {
+                    System.out.println("Error al registrar sanción: " + e.getMessage());
+                }
+            }
             default -> System.out.println("Opción inválida.");
         }
         return false;
@@ -345,15 +356,31 @@ public class Main {
     private static StateRegion pedirRegion() {
         while (true) {
             System.out.println("Regiones disponibles:");
-            for (StateRegion region : StateRegion.disponibles()) {
-                System.out.println("- " + region.getNombre());
+            var disponibles = StateRegion.disponibles();
+            for (int i = 0; i < disponibles.size(); i++) {
+                System.out.println((i + 1) + ". " + disponibles.get(i).getNombre());
             }
-            String regionStr = leerNoVacio("Región: ");
-            StateRegion region = StateRegion.fromNombre(regionStr);
-            if (region != null) {
-                return region;
+            int opcion = leerEnteroConMensaje("Seleccione una región: ");
+            if (opcion >= 1 && opcion <= disponibles.size()) {
+                return disponibles.get(opcion - 1);
             }
-            System.out.println("Región inválida. Intente nuevamente.");
+            System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static StateRangos pedirRango(String etiqueta) {
+        while (true) {
+            System.out.println("Rangos disponibles:");
+            var disponibles = StateRangos.disponibles();
+            for (int i = 0; i < disponibles.size(); i++) {
+                StateRangos rango = disponibles.get(i);
+                System.out.println((i + 1) + ". " + rango.getNombre() + " (" + rango.getMinimo() + " - " + rango.getMaximo() + ")");
+            }
+            int opcion = leerEnteroConMensaje("Seleccione rango " + etiqueta + ": ");
+            if (opcion >= 1 && opcion <= disponibles.size()) {
+                return disponibles.get(opcion - 1);
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
         }
     }
 
@@ -398,6 +425,64 @@ public class Main {
             System.out.println("Jugador registrado exitosamente. Rango asignado: " + rango.getNombre());
         } catch (Exception e) {
             System.out.println("Error al registrar jugador: " + e.getMessage());
+        }
+    }
+
+    private static String seleccionarMotivoSancion() {
+        String[] motivos = {"Abandono", "NoShow", "Strike", "Cooldown"};
+        System.out.println("Motivos disponibles:");
+        for (int i = 0; i < motivos.length; i++) {
+            System.out.println((i + 1) + ". " + motivos[i]);
+        }
+        while (true) {
+            int opcion = leerEnteroConMensaje("Seleccione un motivo (1-" + motivos.length + "): ");
+            if (opcion >= 1 && opcion <= motivos.length) {
+                return motivos[opcion - 1];
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static int seleccionarCupo() {
+        int[] opciones = {5, 3, 1};
+        System.out.println("Jugadores por equipo:");
+        System.out.println("1. 5 (5v5)");
+        System.out.println("2. 3 (3v3)");
+        System.out.println("3. 1 (1v1)");
+        while (true) {
+            int opcion = leerEnteroConMensaje("Seleccione una opción: ");
+            if (opcion >= 1 && opcion <= opciones.length) {
+                return opciones[opcion - 1];
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static String seleccionarFormato(int jugadoresPorEquipo) {
+        return switch (jugadoresPorEquipo) {
+            case 5 -> "5v5";
+            case 3 -> "3v3";
+            case 1 -> "1v1";
+            default -> jugadoresPorEquipo + "v" + jugadoresPorEquipo;
+        };
+    }
+
+    private static String seleccionarRegion() {
+        return pedirRegion().getNombre();
+    }
+
+    private static String seleccionarModalidad() {
+        String[] modalidades = {"ranked-like", "casual", "práctica"};
+        System.out.println("Modalidades disponibles:");
+        for (int i = 0; i < modalidades.length; i++) {
+            System.out.println((i + 1) + ". " + modalidades[i]);
+        }
+        while (true) {
+            int opcion = leerEnteroConMensaje("Seleccione modalidad: ");
+            if (opcion >= 1 && opcion <= modalidades.length) {
+                return modalidades[opcion - 1];
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
         }
     }
 }

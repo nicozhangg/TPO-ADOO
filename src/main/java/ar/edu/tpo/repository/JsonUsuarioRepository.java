@@ -2,6 +2,7 @@ package ar.edu.tpo.repository;
 
 import ar.edu.tpo.domain.Jugador;
 import ar.edu.tpo.domain.Organizador;
+import ar.edu.tpo.domain.SancionActiva;
 import ar.edu.tpo.domain.Usuario;
 import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.regiones.StateRegion;
@@ -15,6 +16,7 @@ import com.google.gson.JsonParser;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class JsonUsuarioRepository implements UsuarioRepository {
@@ -92,9 +94,14 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                     }
                 }
                 JsonArray sanciones = new JsonArray();
-                for (String s : usuario.getSancionesActivas()) {
-                    sanciones.add(s);
-                }
+                usuario.getSancionesActivasSinDepurar().forEach(sancion -> {
+                    JsonObject sancionJson = new JsonObject();
+                    sancionJson.addProperty("motivo", sancion.getMotivo());
+                    if (sancion.getExpiraEn() != null) {
+                        sancionJson.addProperty("expiraEn", sancion.getExpiraEn().toString());
+                    }
+                    sanciones.add(sancionJson);
+                });
                 data.add("sancionesActivas", sanciones);
                 root.add(usuario.getEmail(), data);
             }
@@ -154,7 +161,7 @@ public class JsonUsuarioRepository implements UsuarioRepository {
         }
 
         Usuario usuario;
-        List<String> sanciones = leerSanciones(data);
+        List<SancionActiva> sanciones = leerSanciones(data);
 
         if (TIPO_JUGADOR.equalsIgnoreCase(tipo)) {
             String rango = stringOrNull(data, "rango");
@@ -213,12 +220,23 @@ public class JsonUsuarioRepository implements UsuarioRepository {
         return StateRangos.disponibles().get(0).getNombre();
     }
 
-    private List<String> leerSanciones(JsonObject data) {
-        List<String> sanciones = new ArrayList<>();
+    private List<SancionActiva> leerSanciones(JsonObject data) {
+        List<SancionActiva> sanciones = new ArrayList<>();
         if (data.has("sancionesActivas") && data.get("sancionesActivas").isJsonArray()) {
             for (JsonElement element : data.getAsJsonArray("sancionesActivas")) {
-                if (!element.isJsonNull()) {
-                    sanciones.add(element.getAsString());
+                if (element == null || element.isJsonNull()) continue;
+                if (element.isJsonObject()) {
+                    JsonObject o = element.getAsJsonObject();
+                    String motivo = stringOrNull(o, "motivo");
+                    LocalDateTime expira = null;
+                    if (o.has("expiraEn") && !o.get("expiraEn").isJsonNull()) {
+                        expira = LocalDateTime.parse(o.get("expiraEn").getAsString());
+                    }
+                    if (motivo != null) {
+                        sanciones.add(new SancionActiva(motivo, expira));
+                    }
+                } else if (element.isJsonPrimitive()) {
+                    sanciones.add(new SancionActiva(element.getAsString(), null));
                 }
             }
         }

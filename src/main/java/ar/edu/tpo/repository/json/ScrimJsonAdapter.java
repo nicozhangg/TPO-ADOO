@@ -23,7 +23,6 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
         o.addProperty("id", src.getId());
         o.addProperty("juego", src.getJuego());
         o.addProperty("emailCreador", src.getEmailCreador());
-        o.addProperty("emailRival", src.getEmailRival());
         o.addProperty("rangoMin", src.getRangoMin());
         o.addProperty("rangoMax", src.getRangoMax());
         o.addProperty("cupo", src.getCupo());
@@ -112,10 +111,14 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
                 ? o.get("modalidad").getAsString()
                 : "casual";
 
+        String emailCreador = o.get("emailCreador").getAsString();
+        String emailRivalLegacy = o.has("emailRival") && !o.get("emailRival").isJsonNull()
+                ? o.get("emailRival").getAsString()
+                : null;
+
         Scrim scrim = new Scrim(
                 o.get("juego").getAsString(),
-                o.get("emailCreador").getAsString(),
-                o.get("emailRival").getAsString(),
+                emailCreador,
                 o.get("rangoMin").getAsInt(),
                 o.get("rangoMax").getAsInt(),
                 cupo,
@@ -162,11 +165,12 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
         if (o.has("jugadores") && !o.has("equipo1")) {
             for (JsonElement element : o.getAsJsonArray("jugadores")) {
                 String email = element.getAsString();
-                if (email.equals(scrim.getEmailCreador()) || email.equals(scrim.getEmailRival())) {
-                    continue;
-                }
                 scrim.getEquipo1().agregarJugador(email);
             }
+        }
+
+        if (emailRivalLegacy != null && !emailRivalLegacy.isBlank()) {
+            scrim.getEquipo2().agregarJugador(emailRivalLegacy);
         }
 
         if (o.has("confirmaciones") && o.get("confirmaciones").isJsonObject() && !o.has("confirmacionesEquipos")) {
@@ -229,7 +233,6 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
     private JsonObject serializarEquipo(Equipo equipo) {
         JsonObject equipoJson = new JsonObject();
         equipoJson.addProperty("nombre", equipo.getNombre());
-        equipoJson.addProperty("capitan", equipo.getEmailCapitan());
         JsonArray jugadores = new JsonArray();
         for (String j : equipo.getJugadores()) {
             jugadores.add(j);
@@ -244,9 +247,7 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
         }
         for (JsonElement element : equipoJson.getAsJsonArray("jugadores")) {
             String email = element.getAsString();
-            if (!email.equals(equipo.getEmailCapitan())) {
-                equipo.agregarJugador(email);
-            }
+            equipo.agregarJugador(email);
         }
     }
 
@@ -275,5 +276,6 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
         field.set(scrim, value);
     }
 }
+
 
 

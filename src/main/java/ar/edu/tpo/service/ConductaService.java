@@ -22,7 +22,7 @@ public class ConductaService {
 
     private void registrar(String email, Motivo motivo) {
         registro.registrar(email, motivo);
-        usuarioService.agregarSancion(email, motivo.nombre());
+        usuarioService.agregarSancion(email, motivo.nombre(), null);
     }
 
     public void listarHistorial(){

@@ -1,7 +1,6 @@
 ar\edu\tpo\service\ConductaService.class
 ar\edu\tpo\domain\Scrim.class
 ar\edu\tpo\domain\RegistroConducta.class
-ar\edu\tpo\repository\JsonUsuarioRepository.class
 ar\edu\tpo\domain\Usuario.class
 ar\edu\tpo\domain\motivo\MotivoCooldown.class
 ar\edu\tpo\domain\RegistroConducta$Entrada.class

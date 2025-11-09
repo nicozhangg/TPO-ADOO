@@ -1,5 +1,6 @@
 package ar.edu.tpo.service.scrim;
 
+import ar.edu.tpo.domain.SancionActiva;
 import ar.edu.tpo.domain.Scrim;
 import ar.edu.tpo.domain.estado.BuscandoJugadoresState;
 import ar.edu.tpo.domain.estado.ConfirmadoState;
@@ -28,7 +29,11 @@ public class ScrimLobbyService {
     public void unirse(String idScrim, String emailJugador) {
         var usuario = usuarios.buscar(emailJugador);
         if (usuario.tieneSancionesActivas()) {
-            String motivos = String.join("@", usuario.getSancionesActivas());
+            String motivos = usuario.getSancionesActivas()
+                    .stream()
+                    .map(SancionActiva::toString)
+                    .reduce((a, b) -> a + " @ " + b)
+                    .orElse("Desconocido");
             throw new SecurityException("No puedes unirte a scrims: sanciones activas " + motivos);
         }
         Scrim scrim = repo.buscarPorId(idScrim);
@@ -40,7 +45,11 @@ public class ScrimLobbyService {
     public void unirseAEquipo(String idScrim, String emailJugador, String nombreEquipo) {
         var usuario = usuarios.buscar(emailJugador);
         if (usuario.tieneSancionesActivas()) {
-            String motivos = String.join("@", usuario.getSancionesActivas());
+            String motivos = usuario.getSancionesActivas()
+                    .stream()
+                    .map(SancionActiva::toString)
+                    .reduce((a, b) -> a + " @ " + b)
+                    .orElse("Desconocido");
             throw new SecurityException("No puedes unirte a scrims: sanciones activas " + motivos);
         }
         Scrim scrim = repo.buscarPorId(idScrim);

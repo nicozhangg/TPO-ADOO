@@ -1,141 +1,64 @@
 {
-  "700f3d3f-2800-42be-aeb5-a54093970b82": {
-    "id": "700f3d3f-2800-42be-aeb5-a54093970b82",
+  "3b6f6b8b-a997-4443-a4a6-18ddb3baaf78": {
+    "id": "3b6f6b8b-a997-4443-a4a6-18ddb3baaf78",
     "juego": "Valorant",
     "emailCreador": "a@a.com",
-    "emailRival": "b@b.com",
-    "rangoMin": 500,
-    "rangoMax": 800,
-    "cupo": 6,
-    "formato": "6v6",
-    "region": "REGION_DESCONOCIDA",
+    "rangoMin": 301,
+    "rangoMax": 900,
+    "cupo": 3,
+    "formato": "3v3",
+    "region": "Europa",
     "latenciaMaxMs": 100,
+    "modalidad": "práctica",
+    "estado": "BUSCANDO_JUGADORES",
+    "equipo1": {
+      "nombre": "Equipo A",
+      "jugadores": []
+    },
+    "equipo2": {
+      "nombre": "Equipo B",
+      "jugadores": []
+    },
+    "jugadores": [],
+    "confirmacionesEquipos": {
+      "Equipo A": false,
+      "Equipo B": false
+    },
+    "confirmaciones": {},
+    "estadisticas": [],
+    "listaEspera": []
+  },
+  "db7b7496-dbed-4563-aeef-ffb8c21a7b9f": {
+    "id": "db7b7496-dbed-4563-aeef-ffb8c21a7b9f",
+    "juego": "Valorant",
+    "emailCreador": "a@a.com",
+    "rangoMin": 301,
+    "rangoMax": 900,
+    "cupo": 3,
+    "formato": "3v3",
+    "region": "America",
+    "latenciaMaxMs": 190,
     "modalidad": "casual",
     "estado": "BUSCANDO_JUGADORES",
-    "inicio": "2025-10-28T20:00",
-    "fin": "2025-10-29T00:00",
     "equipo1": {
-      "nombre": "Equipo a@a.com",
-      "capitan": "a@a.com",
-      "jugadores": [
-        "a@a.com",
-        "d@d.com"
-      ]
+      "nombre": "Equipo A",
+      "jugadores": []
     },
     "equipo2": {
-      "nombre": "Equipo b@b.com",
-      "capitan": "b@b.com",
+      "nombre": "Equipo B",
       "jugadores": [
         "b@b.com"
       ]
     },
     "jugadores": [
-      "a@a.com",
-      "d@d.com",
       "b@b.com"
     ],
     "confirmacionesEquipos": {
-      "Equipo a@a.com": false,
-      "Equipo b@b.com": false
+      "Equipo A": false,
+      "Equipo B": false
     },
     "confirmaciones": {
-      "a@a.com": false,
-      "d@d.com": false,
       "b@b.com": false
-    },
-    "estadisticas": [],
-    "listaEspera": []
-  },
-  "907cc4c6-6f21-4110-b8e8-ba5324e7f652": {
-    "id": "907cc4c6-6f21-4110-b8e8-ba5324e7f652",
-    "juego": "CS",
-    "emailCreador": "a@a.com",
-    "emailRival": "b@b.com",
-    "rangoMin": 100,
-    "rangoMax": 500,
-    "cupo": 2,
-    "formato": "2v2",
-    "region": "REGION_DESCONOCIDA",
-    "latenciaMaxMs": 100,
-    "modalidad": "casual",
-    "estado": "EN_JUEGO",
-    "inicio": "2025-11-08T17:46",
-    "fin": "2025-11-08T20:50",
-    "equipo1": {
-      "nombre": "Equipo a@a.com",
-      "capitan": "a@a.com",
-      "jugadores": [
-        "a@a.com",
-        "c@c.com"
-      ]
-    },
-    "equipo2": {
-      "nombre": "Equipo b@b.com",
-      "capitan": "b@b.com",
-      "jugadores": [
-        "b@b.com",
-        "d@d.com"
-      ]
-    },
-    "jugadores": [
-      "a@a.com",
-      "c@c.com",
-      "b@b.com",
-      "d@d.com"
-    ],
-    "confirmacionesEquipos": {
-      "Equipo a@a.com": true,
-      "Equipo b@b.com": true
-    },
-    "confirmaciones": {
-      "a@a.com": true,
-      "c@c.com": true,
-      "b@b.com": true,
-      "d@d.com": true
-    },
-    "estadisticas": [],
-    "listaEspera": []
-  },
-  "c107aa78-8d2a-4da2-8e56-abc3d05f58fa": {
-    "id": "c107aa78-8d2a-4da2-8e56-abc3d05f58fa",
-    "juego": "Valorant",
-    "emailCreador": "a@a.com",
-    "emailRival": "b@b.com",
-    "rangoMin": 190,
-    "rangoMax": 199,
-    "cupo": 1,
-    "formato": "1v1",
-    "region": "REGION_DESCONOCIDA",
-    "latenciaMaxMs": 100,
-    "modalidad": "casual",
-    "estado": "LOBBY_ARMADO",
-    "inicio": "2025-04-11T19:30",
-    "fin": "2025-04-11T23:30",
-    "equipo1": {
-      "nombre": "Equipo a@a.com",
-      "capitan": "a@a.com",
-      "jugadores": [
-        "a@a.com"
-      ]
-    },
-    "equipo2": {
-      "nombre": "Equipo b@b.com",
-      "capitan": "b@b.com",
-      "jugadores": [
-        "b@b.com"
-      ]
-    },
-    "jugadores": [
-      "a@a.com",
-      "b@b.com"
-    ],
-    "confirmacionesEquipos": {
-      "Equipo a@a.com": false,
-      "Equipo b@b.com": true
-    },
-    "confirmaciones": {
-      "a@a.com": false,
-      "b@b.com": true
     },
     "estadisticas": [],
     "listaEspera": []

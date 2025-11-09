@@ -7,7 +7,6 @@ public class Scrim {
     private final String id;
     private final String juego;
     private final String emailCreador;
-    private final String emailRival;
     private final int rangoMin;
     private final int rangoMax;
     private final String formato;
@@ -31,7 +30,7 @@ public class Scrim {
     private final List<Estadistica> estadisticas = new ArrayList<>();
     private final List<WaitlistEntry> listaEspera = new ArrayList<>();
 
-    public Scrim(String juego, String emailCreador, String emailRival,
+    public Scrim(String juego, String emailCreador,
                  int rangoMin, int rangoMax, int cupo,
                  String formato, String region, int latenciaMaxMs,
                  String modalidad) {
@@ -45,7 +44,6 @@ public class Scrim {
         this.id = UUID.randomUUID().toString();
         this.juego = Objects.requireNonNull(juego);
         this.emailCreador = Objects.requireNonNull(emailCreador);
-        this.emailRival = Objects.requireNonNull(emailRival);
         this.rangoMin = rangoMin;
         this.rangoMax = rangoMax;
         this.cupo = cupo;
@@ -58,8 +56,8 @@ public class Scrim {
         if (this.modalidad.isEmpty()) throw new IllegalArgumentException("Modalidad requerida");
 
         // Crear equipos: equipo1 (creador) y equipo2 (rival)
-        this.equipo1 = new Equipo("Equipo " + emailCreador, emailCreador);
-        this.equipo2 = new Equipo("Equipo " + emailRival, emailRival);
+        this.equipo1 = new Equipo("Equipo A");
+        this.equipo2 = new Equipo("Equipo B");
         this.confirmacionesEquipos.put(equipo1.getNombre(), Boolean.FALSE);
         this.confirmacionesEquipos.put(equipo2.getNombre(), Boolean.FALSE);
     }
@@ -80,14 +78,7 @@ public class Scrim {
     
     // Método legacy: agrega al equipo del creador si es el creador, sino al rival
     public void agregarJugador(String email){
-        if (emailCreador.equals(email)) {
-            estado.agregarJugadorAEquipo(this, email, equipo1.getNombre());
-        } else if (emailRival.equals(email)) {
-            estado.agregarJugadorAEquipo(this, email, equipo2.getNombre());
-        } else {
-            // Por defecto, agregar al equipo1
-            estado.agregarJugadorAEquipo(this, email, equipo1.getNombre());
-        }
+        estado.agregarJugadorAEquipo(this, email, equipo1.getNombre());
     }
 
     public void quitarJugador(String email){
@@ -164,7 +155,6 @@ public class Scrim {
     public String getId(){ return id; }
     public String getJuego(){ return juego; }
     public String getEmailCreador(){ return emailCreador; }
-    public String getEmailRival(){ return emailRival; }
     public int getRangoMin(){ return rangoMin; }
     public int getRangoMax(){ return rangoMax; }
     public String getFormato(){ return formato; }

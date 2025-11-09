@@ -48,7 +48,7 @@ public class Jugador extends Usuario {
                    String rangoNombre,
                    String rolNombre,
                    String regionNombre,
-                   List<String> sancionesActivas) {
+                   List<SancionActiva> sancionesActivas) {
         super(id, email, password, mmr, latenciaMs, sancionesActivas);
         this.rangoNombre = Objects.requireNonNull(rangoNombre, "rango requerido");
         this.rolNombre = Objects.requireNonNull(rolNombre, "rol requerido");

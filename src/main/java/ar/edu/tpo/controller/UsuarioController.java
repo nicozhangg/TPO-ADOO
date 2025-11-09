@@ -37,7 +37,7 @@ public class UsuarioController {
     public void listar() {
         for (Usuario u : service.listar()) {
             System.out.println(u);
-        }
+    }
     }
 
     public void buscar(String email) {
