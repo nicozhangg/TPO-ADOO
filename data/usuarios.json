@@ -1,30 +1,41 @@
 {
   "a@a.com": {
+    "tipo": "Organizador",
+    "id": "ORG-1",
     "email": "a@a.com",
-    "nickname": "a",
-    "mmr": 100,
-    "latenciaMs": 5,
-    "rol": "ORGANIZER"
+    "sancionesActivas": []
   },
   "b@b.com": {
+    "tipo": "Jugador",
+    "id": "JUG-1",
     "email": "b@b.com",
-    "nickname": "b",
     "mmr": 150,
     "latenciaMs": 7,
-    "rol": "PLAYER"
+    "rango": "Hierro",
+    "rolPreferido": "Duelista",
+    "region": "America",
+    "sancionesActivas": []
   },
   "c@c.com": {
+    "tipo": "Jugador",
+    "id": "JUG-2",
     "email": "c@c.com",
-    "nickname": "c",
     "mmr": 150,
     "latenciaMs": 7,
-    "rol": "PLAYER"
+    "rango": "Hierro",
+    "rolPreferido": "Iniciador",
+    "region": "Europa",
+    "sancionesActivas": []
   },
   "d@d.com": {
+    "tipo": "Jugador",
+    "id": "JUG-3",
     "email": "d@d.com",
-    "nickname": "d",
     "mmr": 200,
     "latenciaMs": 150,
-    "rol": "PLAYER"
+    "rango": "Bronce",
+    "rolPreferido": "Controlador",
+    "region": "America",
+    "sancionesActivas": []
   }
 }

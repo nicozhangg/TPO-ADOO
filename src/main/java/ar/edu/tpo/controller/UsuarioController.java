@@ -1,21 +1,45 @@
 package ar.edu.tpo.controller;
 
-import ar.edu.tpo.domain.Rol;
 import ar.edu.tpo.domain.Usuario;
+import ar.edu.tpo.domain.rangos.StateRangos;
+import ar.edu.tpo.domain.regiones.StateRegion;
+import ar.edu.tpo.domain.roles.StateRoles;
 import ar.edu.tpo.service.UsuarioService;
 
 public class UsuarioController {
     private final UsuarioService service;
-    public UsuarioController(UsuarioService s){ this.service = s; }
 
-    public void registrar(String email, String nickname, int mmr, int latenciaMs, Rol rol){
-        service.registrar(email, nickname, mmr, latenciaMs, rol);
+    public UsuarioController(UsuarioService service) {
+        this.service = service;
+    }
+
+    public void registrarOrganizador(String email) {
+        service.registrarOrganizador(email);
+        System.out.println("Organizador registrado.");
+    }
+
+    public void registrarJugador(String email,
+                                 int mmr,
+                                 int latenciaMs,
+                                 StateRangos rango,
+                                 StateRoles rolPreferido,
+                                 StateRegion region) {
+        service.registrarJugador(email, mmr, latenciaMs, rango, rolPreferido, region);
+        System.out.println("Jugador registrado.");
+    }
+
+    public void registrar(Usuario usuario) {
+        service.registrar(usuario);
         System.out.println("Usuario registrado.");
     }
-    public void listar(){
-        for (Usuario u: service.listar()) System.out.println(u);
+
+    public void listar() {
+        for (Usuario u : service.listar()) {
+            System.out.println(u);
+        }
     }
-    public void buscar(String email){
+
+    public void buscar(String email) {
         System.out.println(service.buscar(email));
     }
 }

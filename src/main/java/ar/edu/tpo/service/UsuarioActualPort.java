@@ -1,6 +1,6 @@
 package ar.edu.tpo.service;
 
-import ar.edu.tpo.domain.Rol;
+import ar.edu.tpo.domain.Usuario;
 
 /**
  * Puerto para consultar el usuario actual logueado.
@@ -14,9 +14,8 @@ public interface UsuarioActualPort {
     String obtenerEmailUsuarioActual();
 
     /**
-     * Obtiene el rol del usuario actualmente logueado.
-     * @return el rol del usuario logueado, o null si no hay usuario logueado
+     * Obtiene el usuario actualmente logueado.
+     * @return el usuario logueado, o null si no hay usuario logueado
      */
-    Rol obtenerRolUsuarioActual();
+    Usuario obtenerUsuarioActual();
 }
-

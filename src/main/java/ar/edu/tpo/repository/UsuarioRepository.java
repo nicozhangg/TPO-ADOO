@@ -7,4 +7,5 @@ public interface UsuarioRepository {
     void guardar(Usuario u);
     Usuario buscar(String email);
     Collection<Usuario> listar();
+    void actualizar(Usuario u);
 }

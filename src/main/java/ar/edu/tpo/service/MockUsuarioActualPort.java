@@ -1,6 +1,6 @@
 package ar.edu.tpo.service;
 
-import ar.edu.tpo.domain.Rol;
+import ar.edu.tpo.domain.Usuario;
 
 /**
  * Implementación temporal/mock del UsuarioActualPort.
@@ -8,34 +8,30 @@ import ar.edu.tpo.domain.Rol;
  * El módulo de login/usuario de otro equipo deberá proporcionar la implementación real.
  */
 public class MockUsuarioActualPort implements UsuarioActualPort {
-    private String emailActual;
-    private Rol rolActual;
+    private Usuario usuarioActual;
 
     /**
      * Permite configurar el usuario actual para testing.
      * En producción, esto será manejado por el módulo de login.
      */
-    public void establecerUsuarioActual(String email, Rol rol) {
-        this.emailActual = email;
-        this.rolActual = rol;
+    public void establecerUsuarioActual(Usuario usuario) {
+        this.usuarioActual = usuario;
     }
 
     /**
      * Limpia el usuario actual (logout simulado).
      */
     public void limpiarUsuarioActual() {
-        this.emailActual = null;
-        this.rolActual = null;
+        this.usuarioActual = null;
     }
 
     @Override
     public String obtenerEmailUsuarioActual() {
-        return emailActual;
+        return usuarioActual != null ? usuarioActual.getEmail() : null;
     }
 
     @Override
-    public Rol obtenerRolUsuarioActual() {
-        return rolActual;
+    public Usuario obtenerUsuarioActual() {
+        return usuarioActual;
     }
 }
-

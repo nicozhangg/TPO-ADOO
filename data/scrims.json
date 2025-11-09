@@ -19,7 +19,6 @@
       "capitan": "a@a.com",
       "jugadores": [
         "a@a.com",
-        "c@c.com",
         "d@d.com"
       ]
     },
@@ -32,7 +31,6 @@
     },
     "jugadores": [
       "a@a.com",
-      "c@c.com",
       "d@d.com",
       "b@b.com"
     ],
@@ -42,7 +40,6 @@
     },
     "confirmaciones": {
       "a@a.com": false,
-      "c@c.com": false,
       "d@d.com": false,
       "b@b.com": false
     },
@@ -106,12 +103,12 @@
     "emailRival": "b@b.com",
     "rangoMin": 190,
     "rangoMax": 199,
-    "cupo": 3,
-    "formato": "3v3",
+    "cupo": 1,
+    "formato": "1v1",
     "region": "REGION_DESCONOCIDA",
     "latenciaMaxMs": 100,
     "modalidad": "casual",
-    "estado": "BUSCANDO_JUGADORES",
+    "estado": "LOBBY_ARMADO",
     "inicio": "2025-04-11T19:30",
     "fin": "2025-04-11T23:30",
     "equipo1": {
@@ -134,11 +131,11 @@
     ],
     "confirmacionesEquipos": {
       "Equipo a@a.com": false,
-      "Equipo b@b.com": false
+      "Equipo b@b.com": true
     },
     "confirmaciones": {
       "a@a.com": false,
-      "b@b.com": false
+      "b@b.com": true
     },
     "estadisticas": [],
     "listaEspera": []

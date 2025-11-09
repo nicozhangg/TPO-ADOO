@@ -1,11 +1,13 @@
 package ar.edu.tpo.controller;
 
-import ar.edu.tpo.domain.Rol;
+import ar.edu.tpo.domain.Jugador;
+import ar.edu.tpo.domain.Organizador;
+import ar.edu.tpo.domain.Usuario;
 import ar.edu.tpo.service.ArgentinaTimeZone;
+import ar.edu.tpo.service.UsuarioActualPort;
 import ar.edu.tpo.service.scrim.ScrimCicloDeVidaService;
 import ar.edu.tpo.service.scrim.ScrimLobbyService;
 import ar.edu.tpo.service.scrim.ScrimStatsService;
-import ar.edu.tpo.service.UsuarioActualPort;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -27,18 +29,19 @@ public class ScrimController {
     }
 
     // ================== VALIDACIÓN DE PERMISOS ==================
-    private void validarPermiso(Rol rolRequerido) {
-        Rol rolActual = usuarioActual.obtenerRolUsuarioActual();
-        if (rolActual == null) {
+    private Usuario requerirUsuarioActual() {
+        Usuario usuario = usuarioActual.obtenerUsuarioActual();
+        if (usuario == null) {
             throw new IllegalStateException("No hay usuario logueado");
         }
-        if (rolActual != rolRequerido) {
-            throw new SecurityException("Operación no permitida. Se requiere rol: " + rolRequerido);
-        }
+        return usuario;
     }
 
     private void validarPermisoOrganizer() {
-        validarPermiso(Rol.ORGANIZER);
+        Usuario usuario = requerirUsuarioActual();
+        if (!(usuario instanceof Organizador)) {
+            throw new SecurityException("Operación no permitida. Se requiere usuario organizador");
+        }
     }
 
     // ================== CREAR ==================
@@ -72,59 +75,63 @@ public class ScrimController {
 
     // ================== LISTAR ==================
     public void listar(){ 
-        // Permitido para todos los usuarios (PLAYER y ORGANIZER)
+        // Permitido para todos los tipos de usuarios
         lifecycleService.listarScrims().forEach(System.out::println);
     }
 
     // ================== LOBBY ===================
     public void unirse(String idScrim, String emailJugador){
-        // PLAYER solo puede unirse si es el mismo usuario logueado
-        Rol rolActual = usuarioActual.obtenerRolUsuarioActual();
-        if (rolActual == null) {
-            throw new IllegalStateException("No hay usuario logueado");
-        }
-        
-        if (rolActual == Rol.PLAYER) {
-            String emailActual = usuarioActual.obtenerEmailUsuarioActual();
-            if (emailActual == null || !emailActual.equals(emailJugador)) {
+        Usuario usuario = requerirUsuarioActual();
+        if (usuario instanceof Jugador jugador) {
+            if (!jugador.getEmail().equals(emailJugador)) {
                 throw new SecurityException("Solo puedes unirte a un scrim con tu propio email");
             }
-        } else {
-            validarPermisoOrganizer();
+        } else if (!(usuario instanceof Organizador)) {
+            throw new SecurityException("Operación no permitida para el usuario actual");
         }
-        
+
         lobbyService.unirse(idScrim, emailJugador); // Determina equipo automáticamente
         System.out.println("Jugador unido.");
     }
     
     public void unirseAEquipo(String idScrim, String emailJugador, String nombreEquipo){
-        // PLAYER solo puede unirse si es el mismo usuario logueado
-        Rol rolActual = usuarioActual.obtenerRolUsuarioActual();
-        if (rolActual == null) {
-            throw new IllegalStateException("No hay usuario logueado");
-        }
-        
-        if (rolActual == Rol.PLAYER) {
-            String emailActual = usuarioActual.obtenerEmailUsuarioActual();
-            if (emailActual == null || !emailActual.equals(emailJugador)) {
+        Usuario usuario = requerirUsuarioActual();
+        if (usuario instanceof Jugador jugador) {
+            if (!jugador.getEmail().equals(emailJugador)) {
                 throw new SecurityException("Solo puedes unirte a un scrim con tu propio email");
             }
-        } else {
-            validarPermisoOrganizer();
+        } else if (!(usuario instanceof Organizador)) {
+            throw new SecurityException("Operación no permitida para el usuario actual");
         }
-        
+
         lobbyService.unirseAEquipo(idScrim, emailJugador, nombreEquipo);
         System.out.println("Jugador unido al equipo.");
     }
     public void salir(String idScrim, String emailJugador){
-        validarPermisoOrganizer();
+        Usuario usuario = requerirUsuarioActual();
+        if (usuario instanceof Jugador jugador) {
+            if (!jugador.getEmail().equals(emailJugador)) {
+                throw new SecurityException("Solo puedes salir con tu propio email");
+            }
+        } else if (!(usuario instanceof Organizador)) {
+            throw new SecurityException("Operación no permitida para el usuario actual");
+        }
+
         lobbyService.salir(idScrim, emailJugador);
-        System.out.println("Jugador quitado.");
+        System.out.println("Salida registrada.");
     }
     public void confirmar(String idScrim, String emailJugador){
-        validarPermisoOrganizer();
+        Usuario usuario = requerirUsuarioActual();
+        if (usuario instanceof Jugador jugador) {
+            if (!jugador.getEmail().equals(emailJugador)) {
+                throw new SecurityException("Solo puedes confirmar tu propia participación");
+            }
+        } else if (!(usuario instanceof Organizador)) {
+            throw new SecurityException("Operación no permitida para el usuario actual");
+        }
+
         lobbyService.confirmarJugador(idScrim, emailJugador);
-        System.out.println("Equipo confirmado.");
+        System.out.println("Confirmación registrada.");
     }
     
     public void confirmarEquipo(String idScrim, String nombreEquipo){
