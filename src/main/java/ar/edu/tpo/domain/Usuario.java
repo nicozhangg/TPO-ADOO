@@ -9,10 +9,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
-
 public abstract class Usuario {
-    private final String id;
+    private String id;
+    private final String nombre;
     private final String email;
     private final String passwordHash;
     private final int mmr;
@@ -25,35 +24,36 @@ public abstract class Usuario {
     private boolean suspendido;
     private Double kdaHistorico; // opcional
 
-    protected Usuario(String email, String passwordHash, int mmr, int latenciaMs) {
-        this(null, email, passwordHash, mmr, latenciaMs, null, null, null, null, null, null);
+    protected Usuario(String nombre, String email, String passwordHash, int mmr, int latenciaMs) {
+        this(null, nombre, email, passwordHash, mmr, latenciaMs, null, null, null, null, null, null);
     }
 
-    protected Usuario(String email, String passwordHash, int mmr, int latenciaMs, List<SancionActiva> sancionesActivas) {
-        this(null, email, passwordHash, mmr, latenciaMs, sancionesActivas, null, null, null, null, null);
+    protected Usuario(String nombre, String email, String passwordHash, int mmr, int latenciaMs, List<SancionActiva> sancionesActivas) {
+        this(null, nombre, email, passwordHash, mmr, latenciaMs, sancionesActivas, null, null, null, null, null);
     }
 
-    protected Usuario(String email, String passwordHash, List<SancionActiva> sancionesActivas) {
-        this(null, email, passwordHash, 0, 0, sancionesActivas, null, null, null, null, null);
+    protected Usuario(String nombre, String email, String passwordHash, List<SancionActiva> sancionesActivas) {
+        this(null, nombre, email, passwordHash, 0, 0, sancionesActivas, null, null, null, null, null);
     }
 
-    protected Usuario(String email, String passwordHash, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
-        this(null, email, passwordHash, 0, 0, sancionesActivas, sancionesHistoricas, null, null, null, null);
+    protected Usuario(String nombre, String email, String passwordHash, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
+        this(null, nombre, email, passwordHash, 0, 0, sancionesActivas, sancionesHistoricas, null, null, null, null);
     }
 
-    protected Usuario(String id, String email, String passwordHash, List<SancionActiva> sancionesActivas) {
-        this(id, email, passwordHash, 0, 0, sancionesActivas, null, null, null, null, null);
+    protected Usuario(String id, String nombre, String email, String passwordHash, List<SancionActiva> sancionesActivas) {
+        this(id, nombre, email, passwordHash, 0, 0, sancionesActivas, null, null, null, null, null);
     }
 
-    protected Usuario(String id, String email, String passwordHash, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
-        this(id, email, passwordHash, 0, 0, sancionesActivas, sancionesHistoricas, null, null, null, null);
+    protected Usuario(String id, String nombre, String email, String passwordHash, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
+        this(id, nombre, email, passwordHash, 0, 0, sancionesActivas, sancionesHistoricas, null, null, null, null);
     }
 
-    protected Usuario(String id, String email, String passwordHash, int mmr, int latenciaMs, List<SancionActiva> sancionesActivas) {
-        this(id, email, passwordHash, mmr, latenciaMs, sancionesActivas, null, null, null, null, null);
+    protected Usuario(String id, String nombre, String email, String passwordHash, int mmr, int latenciaMs, List<SancionActiva> sancionesActivas) {
+        this(id, nombre, email, passwordHash, mmr, latenciaMs, sancionesActivas, null, null, null, null, null);
     }
 
     protected Usuario(String id,
+                      String nombre,
                       String email,
                       String passwordHash,
                       int mmr,
@@ -64,8 +64,8 @@ public abstract class Usuario {
                       Boolean suspendido,
                       List<String> scrimsFavoritas,
                       List<ScrimAlerta> alertasScrim) {
-        String effectiveId = (id == null || id.isBlank()) ? UUID.randomUUID().toString() : id;
-        this.id = effectiveId;
+        this.id = (id != null && !id.isBlank()) ? id : null;
+        this.nombre = Objects.requireNonNull(nombre, "nombre requerido");
         this.email = Objects.requireNonNull(email, "email requerido");
         this.passwordHash = Objects.requireNonNull(passwordHash, "password requerido");
         this.mmr = mmr;
@@ -91,6 +91,7 @@ public abstract class Usuario {
     }
 
     public String getId() { return id; }
+    public String getNombre() { return nombre; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
     public int getMmr() { return mmr; }
@@ -198,14 +199,25 @@ public abstract class Usuario {
 
     public abstract String getTipo();
 
+    public void asignarId(String nuevoId) {
+        if (nuevoId == null || nuevoId.isBlank()) {
+            throw new IllegalArgumentException("El ID del usuario no puede ser vacío.");
+        }
+        if (this.id != null && !this.id.equals(nuevoId)) {
+            throw new IllegalStateException("El usuario ya tiene un ID asignado.");
+        }
+        this.id = nuevoId;
+    }
+
     @Override
     public String toString() {
         depurarSancionesVencidas();
         String sanciones = sancionesActivas.isEmpty() ? "" : ", sanciones=" + sancionesActivas;
-        return "%s{id='%s', email='%s', mmr=%d, latMs=%d%s%s}"
+        return "%s{id='%s', nombre='%s', email='%s', mmr=%d, latMs=%d%s%s}"
                 .formatted(
                         getTipo(),
                         id,
+                        nombre,
                         email,
                         mmr,
                         latenciaMs,

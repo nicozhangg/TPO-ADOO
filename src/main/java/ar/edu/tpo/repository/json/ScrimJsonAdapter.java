@@ -129,7 +129,7 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
         );
 
         try {
-            setField(scrim, "id", o.get("id").getAsString());
+            scrim.asignarId(o.get("id").getAsString());
             setField(scrim, "estado", EstadoScrim.desdeNombre(o.get("estado").getAsString()));
         } catch (Exception e) {
             throw new JsonParseException("Reconstruccion Scrim fallo: " + e.getMessage(), e);

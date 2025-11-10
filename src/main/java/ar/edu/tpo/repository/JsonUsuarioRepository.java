@@ -29,12 +29,14 @@ public class JsonUsuarioRepository implements UsuarioRepository {
     private final String ruta;
     private final Gson gson;
     private final Map<String, Usuario> cache;
+    private long nextId;
     private boolean requierePersistencia = false;
 
     public JsonUsuarioRepository(String rutaArchivo){
         this.ruta = rutaArchivo;
         this.gson = new GsonBuilder().setPrettyPrinting().create();
         this.cache = cargarDesdeDisco();
+        this.nextId = calcularSiguienteId(this.cache.values());
         if (requierePersistencia) {
             persistir();
         }
@@ -43,6 +45,7 @@ public class JsonUsuarioRepository implements UsuarioRepository {
     @Override
     public void guardar(Usuario u) {
         if (cache.containsKey(u.getEmail())) throw new IllegalArgumentException("Email ya registrado");
+        asignarIdSiNecesario(u);
         cache.put(u.getEmail(), u);
         persistir();
     }
@@ -62,6 +65,7 @@ public class JsonUsuarioRepository implements UsuarioRepository {
         if (!cache.containsKey(u.getEmail())) {
             throw new IllegalArgumentException("Usuario no registrado: " + u.getEmail());
         }
+        asignarIdSiNecesario(u);
         cache.put(u.getEmail(), u);
         persistir();
     }
@@ -77,6 +81,7 @@ public class JsonUsuarioRepository implements UsuarioRepository {
             for (Usuario usuario : cache.values()) {
                 JsonObject data = new JsonObject();
                 data.addProperty("tipo", usuario.getTipo());
+                data.addProperty("nombre", usuario.getNombre());
                 data.addProperty("id", usuario.getId());
                 data.addProperty("email", usuario.getEmail());
                 data.addProperty("passwordHash", usuario.getPasswordHash());
@@ -185,10 +190,14 @@ public class JsonUsuarioRepository implements UsuarioRepository {
 
     private Usuario mapearUsuario(JsonObject data) {
         String email = stringOrNull(data, "email");
+        String nombre = stringOrNull(data, "nombre");
         String id = stringOrNull(data, "id");
         String password = stringOrNull(data, "passwordHash");
         if (password == null) {
             password = "";
+        }
+        if (nombre == null || nombre.isBlank()) {
+            nombre = email != null ? email : "Usuario";
         }
         int mmr = intOrDefault(data, "mmr", 0);
         int latencia = intOrDefault(data, "latenciaMs", 0);
@@ -230,9 +239,9 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                 region = StateRegion.disponibles().get(0).getNombre();
             }
 
-            usuario = new Jugador(id, email, password, mmr, latencia, rango, rolPreferido, region, sanciones, sancionesHistoricas, strikes, suspendido, favoritas, alertas);
+            usuario = new Jugador(id, nombre, email, password, mmr, latencia, rango, rolPreferido, region, sanciones, sancionesHistoricas, strikes, suspendido, favoritas, alertas);
         } else {
-            usuario = new Organizador(id, email, password, sanciones, sancionesHistoricas, strikes, suspendido);
+            usuario = new Organizador(id, nombre, email, password, sanciones, sancionesHistoricas, strikes, suspendido);
         }
 
         if (id == null || id.isBlank()) {
@@ -353,5 +362,44 @@ public class JsonUsuarioRepository implements UsuarioRepository {
             }
         }
         return alertas;
+    }
+
+    private long calcularSiguienteId(Collection<Usuario> usuarios) {
+        long max = 0L;
+        for (Usuario usuario : usuarios) {
+            String id = usuario.getId();
+            if (id == null) {
+                continue;
+            }
+            try {
+                long value = Long.parseLong(id);
+                if (value > max) {
+                    max = value;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return max + 1;
+    }
+
+    private void actualizarSecuencia(String id) {
+        if (id == null) {
+            return;
+        }
+        try {
+            long value = Long.parseLong(id);
+            if (value >= nextId) {
+                nextId = value + 1;
+            }
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    private void asignarIdSiNecesario(Usuario usuario) {
+        if (usuario.getId() == null || usuario.getId().isBlank()) {
+            usuario.asignarId(String.valueOf(nextId++));
+        } else {
+            actualizarSecuencia(usuario.getId());
+        }
     }
 }

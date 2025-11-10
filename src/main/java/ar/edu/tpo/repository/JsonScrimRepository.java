@@ -15,6 +15,7 @@ public class JsonScrimRepository implements ScrimRepository {
     private final String ruta;
     private final Gson gson;
     private final Map<String, Scrim> cache;
+    private long nextId;
 
     public JsonScrimRepository(String rutaArchivo){
         this.ruta = rutaArchivo;
@@ -23,10 +24,16 @@ public class JsonScrimRepository implements ScrimRepository {
                 .registerTypeAdapter(Scrim.class, new ScrimJsonAdapter())
                 .create();
         this.cache = cargarDesdeDisco();
+        this.nextId = calcularSiguienteId(this.cache.keySet());
     }
 
     @Override
     public void guardar(Scrim scrim) {
+        if (scrim.getId() == null || scrim.getId().isBlank()) {
+            scrim.asignarId(String.valueOf(nextId++));
+        } else {
+            actualizarSecuencia(scrim.getId());
+        }
         cache.put(scrim.getId(), scrim);
         persistir();
     }
@@ -66,6 +73,30 @@ public class JsonScrimRepository implements ScrimRepository {
             }
         } catch (IOException e) {
             throw new RuntimeException("Error al leer JSON: " + e.getMessage(), e);
+        }
+    }
+
+    private long calcularSiguienteId(Set<String> ids) {
+        long max = 0L;
+        for (String id : ids) {
+            try {
+                long value = Long.parseLong(id);
+                if (value > max) {
+                    max = value;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return max + 1;
+    }
+
+    private void actualizarSecuencia(String idExistente) {
+        try {
+            long valor = Long.parseLong(idExistente);
+            if (valor >= nextId) {
+                nextId = valor + 1;
+            }
+        } catch (NumberFormatException ignored) {
         }
     }
 }

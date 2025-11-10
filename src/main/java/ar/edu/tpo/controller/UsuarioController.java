@@ -13,19 +13,20 @@ public class UsuarioController {
         this.service = service;
     }
 
-    public void registrarOrganizador(String email, String password) {
-        service.registrarOrganizador(email, password);
+    public void registrarOrganizador(String nombre, String email, String password) {
+        service.registrarOrganizador(nombre, email, password);
         System.out.println("Organizador registrado.");
     }
 
-    public void registrarJugador(String email,
+    public void registrarJugador(String nombre,
+                                 String email,
                                  String password,
                                  int mmr,
                                  int latenciaMs,
                                  StateRangos rango,
                                  StateRoles rolPreferido,
                                  StateRegion region) {
-        service.registrarJugador(email, password, mmr, latenciaMs, rango, rolPreferido, region);
+        service.registrarJugador(nombre, email, password, mmr, latenciaMs, rango, rolPreferido, region);
         System.out.println("Jugador registrado.");
     }
 

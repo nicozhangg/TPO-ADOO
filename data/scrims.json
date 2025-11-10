@@ -1,6 +1,6 @@
 {
-  "af9d8603-b797-420e-a8ca-ec38b694f297": {
-    "id": "af9d8603-b797-420e-a8ca-ec38b694f297",
+  "1": {
+    "id": "1",
     "juego": "Val",
     "emailCreador": "a@a.com",
     "rangoMin": 301,
@@ -36,8 +36,8 @@
     "estadisticas": [],
     "listaEspera": []
   },
-  "7f2b1c6d-2f61-4f2b-9bc9-3c0de51a0f7a": {
-    "id": "7f2b1c6d-2f61-4f2b-9bc9-3c0de51a0f7a",
+  "2": {
+    "id": "2",
     "juego": "Valorant",
     "emailCreador": "a@a.com",
     "rangoMin": 100,
@@ -83,8 +83,8 @@
       }
     ]
   },
-  "c3f8a940-7469-4a24-b5a1-0e73e75f9298": {
-    "id": "c3f8a940-7469-4a24-b5a1-0e73e75f9298",
+  "3": {
+    "id": "3",
     "juego": "Valorant",
     "emailCreador": "a@a.com",
     "rangoMin": 1100,

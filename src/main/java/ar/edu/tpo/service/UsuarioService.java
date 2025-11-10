@@ -36,18 +36,19 @@ public class UsuarioService {
         }
     }
 
-    public void registrarOrganizador(String email, String password){
-        registrar(new Organizador(email, password));
+    public void registrarOrganizador(String nombre, String email, String password){
+        registrar(new Organizador(nombre, email, password));
     }
 
-    public void registrarJugador(String email,
+    public void registrarJugador(String nombre,
+                                 String email,
                                  String password,
                                  int mmr,
                                  int latenciaMs,
                                  StateRangos rango,
                                  StateRoles rolPreferido,
                                  StateRegion region){
-        registrar(new Jugador(email, password, mmr, latenciaMs, rango, rolPreferido, region));
+        registrar(new Jugador(nombre, email, password, mmr, latenciaMs, rango, rolPreferido, region));
     }
 
     public List<Usuario> listar(){

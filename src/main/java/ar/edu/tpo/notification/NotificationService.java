@@ -23,13 +23,13 @@ public class NotificationService {
 
     public void notificarRegistro(Usuario usuario) {
         enviar(usuario.getEmail(), "Registro exitoso",
-                "Hola %s,\n\nTu cuenta en eScrims fue creada correctamente. ¡Bienvenido!".formatted(usuario.getEmail()));
+                "Hola %s,\n\nTu cuenta en eScrims fue creada correctamente. ¡Bienvenido!".formatted(nombreMostrar(usuario)));
     }
 
     public void notificarInicioSesion(Usuario usuario) {
         enviar(usuario.getEmail(), "Inicio de sesión detectado",
                 "Hola %s,\n\nDetectamos un nuevo inicio de sesión en tu cuenta eScrims a las %s (hora Argentina)."
-                        .formatted(usuario.getEmail(), ahoraArgentina()));
+                        .formatted(nombreMostrar(usuario), ahoraArgentina()));
     }
 
     public void notificarUnionScrim(Scrim scrim, String emailJugador) {
@@ -95,7 +95,7 @@ public class NotificationService {
                 Expira: %s.
 
                 Mientras esté activa no podrás unirte a nuevos scrims.
-                """.formatted(usuario.getEmail(), sancion.getMotivo(), expira);
+                """.formatted(nombreMostrar(usuario), sancion.getMotivo(), expira);
         enviar(usuario.getEmail(), "Se registró una sanción en tu cuenta", mensaje);
     }
 
@@ -110,7 +110,7 @@ public class NotificationService {
                 Expiración original: %s.
 
                 Ya podés volver a participar normalmente.
-                """.formatted(usuario.getEmail(), sancion.getMotivo(), expira);
+                """.formatted(nombreMostrar(usuario), sancion.getMotivo(), expira);
         enviar(usuario.getEmail(), "Sanción levantada", mensaje);
     }
 
@@ -160,7 +160,7 @@ public class NotificationService {
 
                 Ingresá a eScrims para sumarte mientras haya lugar.
                 """.formatted(
-                usuario.getEmail(),
+                nombreMostrar(usuario),
                 scrim.getJuego(),
                 scrim.getRegion(),
                 scrim.getFormato(),
@@ -194,6 +194,14 @@ public class NotificationService {
         }
         Notificacion notificacion = new Notificacion(tipo, notificador.getTipo(), mensaje, destinatario);
         notificador.enviar(notificacion);
+    }
+
+    private String nombreMostrar(Usuario usuario) {
+        String nombre = usuario.getNombre();
+        if (nombre != null && !nombre.isBlank()) {
+            return nombre;
+        }
+        return usuario.getEmail();
     }
 
     private static String ahoraArgentina() {

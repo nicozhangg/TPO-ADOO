@@ -3,10 +3,17 @@ package ar.edu.tpo.domain;
 import ar.edu.tpo.domain.rangos.StateRangos;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class Scrim {
-    private final String id;
+    private String id;
     private final String juego;
     private final String emailCreador;
     private final int rangoMin;
@@ -43,7 +50,7 @@ public class Scrim {
         if (latenciaMaxMs <= 0) {
             throw new IllegalArgumentException("Latencia máxima debe ser > 0 ms");
         }
-        this.id = UUID.randomUUID().toString();
+        this.id = null;
         this.juego = Objects.requireNonNull(juego);
         this.emailCreador = Objects.requireNonNull(emailCreador);
         this.rangoMin = rangoMin;
@@ -262,5 +269,15 @@ public class Scrim {
             WaitlistEntry entry = listaEspera.get(i);
             listaEspera.set(i, new WaitlistEntry(entry.emailJugador(), entry.fechaSolicitud(), i + 1));
         }
+    }
+
+    public void asignarId(String nuevoId) {
+        if (nuevoId == null || nuevoId.isBlank()) {
+            throw new IllegalArgumentException("El ID del scrim no puede ser vacío.");
+        }
+        if (this.id != null && !this.id.equals(nuevoId)) {
+            throw new IllegalStateException("El scrim ya tiene un ID asignado.");
+        }
+        this.id = nuevoId;
     }
 }

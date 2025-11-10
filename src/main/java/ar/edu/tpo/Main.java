@@ -144,7 +144,7 @@ public class Main {
         try {
             Usuario usuario = usuarioService.login(email, password);
             usuarioActual.establecerUsuarioActual(usuario);
-            System.out.println("¡Bienvenido, " + usuario.getEmail() + "! (Tipo: " + usuario.getTipo() + ")");
+            System.out.println("¡Bienvenido, " + usuario.getNombre() + "! (Tipo: " + usuario.getTipo() + ")");
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -177,15 +177,15 @@ public class Main {
         System.out.println("3. Confirmar Jugador");
         System.out.println("4. Sacar Jugador");
         System.out.println("5. Reprogramar fecha de Scrim");
-        System.out.println("7. Iniciar Scrim");
-        System.out.println("8. Finalizar Scrim");
-        System.out.println("9. Cancelar Scrim");
-        System.out.println("10. Cargar Resultado");
-        System.out.println("11. Ver suplentes");
-        System.out.println("12. Agregar sanción a jugador");
-        System.out.println("13. Ver sanciones activas de un jugador");
-        System.out.println("14. Ver sanciones históricas de un jugador");
-        System.out.println("15. Levantar sanción de un jugador");
+        System.out.println("6. Iniciar Scrim");
+        System.out.println("7. Finalizar Scrim");
+        System.out.println("8. Cancelar Scrim");
+        System.out.println("9. Cargar Resultado");
+        System.out.println("10. Ver suplentes");
+        System.out.println("11. Agregar sanción a jugador");
+        System.out.println("12. Ver sanciones activas de un jugador");
+        System.out.println("13. Ver sanciones históricas de un jugador");
+        System.out.println("14. Levantar sanción de un jugador");
         System.out.println("0. Cerrar sesión");
         System.out.print("Seleccione una opción: ");
     }
@@ -297,10 +297,12 @@ public class Main {
             }
             case 3 -> {
                 String idScrimSalir = leerIdScrimValido();
+                if (idScrimSalir == null) break;
                 scrimController.salir(idScrimSalir, jugador.getEmail());
             }
             case 4 -> {
                 String idScrimConfirmar = leerIdScrimValido();
+                if (idScrimConfirmar == null) break;
                 scrimController.confirmar(idScrimConfirmar, jugador.getEmail());
             }
             case 5 -> actualizarPerfilJugador(jugador);
@@ -400,6 +402,7 @@ public class Main {
 
         Usuario actualizado = new Jugador(
                 jugador.getId(),
+                jugador.getNombre(),
                 jugador.getEmail(),
                 nuevoPassword,
                 nuevoMmr,
@@ -480,23 +483,26 @@ public class Main {
                 String fin = scanner.nextLine().trim();
                 scrimController.programar(idScrim, inicio, fin);
             }
-            case 7 -> {
+            case 6 -> {
                 System.out.print("ID del scrim: ");
                 String idScrim = scanner.nextLine().trim();
                 scrimController.iniciar(idScrim);
             }
-            case 8 -> {
+            case 7 -> {
                 System.out.print("ID del scrim: ");
                 String idScrim = scanner.nextLine().trim();
                 scrimController.finalizar(idScrim);
             }
-            case 9 -> {
+            case 8 -> {
                 System.out.print("ID del scrim: ");
                 String idScrim = scanner.nextLine().trim();
                 scrimController.cancelar(idScrim);
             }
-            case 10 -> {
+            case 9 -> {
                 String idScrim = leerIdScrimValido();
+                if (idScrim == null) {
+                    break;
+                }
                 Scrim scrim;
                 try {
                     scrim = scrimController.buscar(idScrim);
@@ -560,11 +566,12 @@ public class Main {
                     }
                 }
             }
-            case 11 -> {
+            case 10 -> {
                 String idScrim = leerIdScrimValido();
+                if (idScrim == null) break;
                 scrimController.mostrarSuplentes(idScrim);
             }
-            case 12 -> {
+            case 11 -> {
                 String email = leerNoVacio("Email del jugador a sancionar: ");
                 String motivo = seleccionarMotivoSancion();
                 String consecuencia = seleccionarConsecuenciaSancion();
@@ -586,7 +593,7 @@ public class Main {
                     System.out.println("Error al registrar sanción: " + e.getMessage());
                 }
             }
-            case 13 -> {
+            case 12 -> {
                 String email = leerNoVacio("Email del jugador: ");
                 try {
                     List<SancionActiva> activas = usuarioService.obtenerSancionesActivas(email);
@@ -604,7 +611,7 @@ public class Main {
                     System.out.println("Error al listar sanciones: " + e.getMessage());
                 }
             }
-            case 14 -> {
+            case 13 -> {
                 String email = leerNoVacio("Email del jugador: ");
                 try {
                     List<SancionHistorica> historicas = usuarioService.obtenerSancionesHistoricas(email);
@@ -622,7 +629,7 @@ public class Main {
                     System.out.println("Error al listar sanciones: " + e.getMessage());
                 }
             }
-            case 15 -> {
+            case 14 -> {
                 String email = leerNoVacio("Email del jugador: ");
                 try {
                     List<SancionActiva> activas = usuarioService.obtenerSancionesActivas(email);
@@ -792,10 +799,11 @@ public class Main {
     }
 
     private static void registrarOrganizadorFlow() {
+        String nombre = leerNoVacio("Nombre del organizador: ");
         String email = leerNoVacio("Email del organizador: ");
         String password = leerNoVacio("Contraseña: ");
         try {
-            usuarioService.registrarOrganizador(email, password);
+            usuarioService.registrarOrganizador(nombre, email, password);
             System.out.println("Organizador registrado exitosamente.");
         } catch (Exception e) {
             System.out.println("Error al registrar organizador: " + e.getMessage());
@@ -803,6 +811,7 @@ public class Main {
     }
 
     private static void registrarJugadorFlow() {
+        String nombre = leerNoVacio("Nombre del jugador: ");
         String email = leerNoVacio("Email del jugador: ");
         String password = leerNoVacio("Contraseña: ");
         System.out.println("Ingrese datos del perfil competitivo:");
@@ -814,7 +823,7 @@ public class Main {
         StateRangos rango = StateRangos.asignarRangoSegunPuntos(mmr);
 
         try {
-            usuarioService.registrarJugador(email, password, mmr, latencia, rango, rolPreferido, region);
+            usuarioService.registrarJugador(nombre, email, password, mmr, latencia, rango, rolPreferido, region);
             System.out.println("Jugador registrado exitosamente. Rango asignado: " + rango.getNombre());
         } catch (Exception e) {
             System.out.println("Error al registrar jugador: " + e.getMessage());
@@ -935,22 +944,20 @@ public class Main {
     }
 
     private static String leerIdScrimValido(boolean requerido) {
-        while (true) {
-            System.out.print("Ingrese ID del scrim: ");
-            String idScrim = scanner.nextLine().trim();
-            if (idScrim.isBlank()) {
-                if (requerido) {
-                    System.out.println("El ID no puede ser vacío.");
-                    continue;
-                }
-                return null;
+        System.out.print("Ingrese ID del scrim: ");
+        String idScrim = scanner.nextLine().trim();
+        if (idScrim.isBlank()) {
+            if (requerido) {
+                System.out.println("Error: el ID no puede ser vacío. Volviendo al menú.");
             }
-            try {
-                scrimController.buscar(idScrim);
-                return idScrim;
-            } catch (Exception e) {
-                System.out.println("Scrim no encontrado. Intente nuevamente.");
-            }
+            return null;
+        }
+        try {
+            scrimController.buscar(idScrim);
+            return idScrim;
+        } catch (Exception e) {
+            System.out.println("Error: scrim no encontrado. Volviendo al menú.");
+            return null;
         }
     }
 

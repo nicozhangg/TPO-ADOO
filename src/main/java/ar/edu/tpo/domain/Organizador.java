@@ -4,28 +4,16 @@ import java.util.List;
 
 public class Organizador extends Usuario {
 
-    public Organizador(String email, String password) {
-        super(email, password, (List<SancionActiva>) null);
+    public Organizador(String nombre, String email, String password) {
+        this(null, nombre, email, password, null, null, null, null);
     }
 
-    public Organizador(String email, String password, List<SancionActiva> sancionesActivas) {
-        super(email, password, sancionesActivas);
+    public Organizador(String nombre, String email, String password, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
+        this(null, nombre, email, password, sancionesActivas, sancionesHistoricas, null, null);
     }
 
-    public Organizador(String email, String password, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
-        super(email, password, sancionesActivas, sancionesHistoricas);
-    }
-
-    public Organizador(String id, String email, String password, List<SancionActiva> sancionesActivas) {
-        super(id, email, password, sancionesActivas);
-    }
-
-    public Organizador(String id, String email, String password, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
-        super(id, email, password, sancionesActivas, sancionesHistoricas);
-    }
-
-    public Organizador(String id, String email, String password, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas, Integer strikes, Boolean suspendido) {
-        super(id, email, password, 0, 0, sancionesActivas, sancionesHistoricas, strikes, suspendido, null, null);
+    public Organizador(String id, String nombre, String email, String password, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas, Integer strikes, Boolean suspendido) {
+        super(id, nombre, email, password, 0, 0, sancionesActivas, sancionesHistoricas, strikes, suspendido, null, null);
     }
 
     @Override

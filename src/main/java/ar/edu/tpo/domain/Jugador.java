@@ -12,7 +12,8 @@ public class Jugador extends Usuario {
     private final String rolNombre;
     private final String regionNombre;
 
-    public Jugador(String email,
+    public Jugador(String nombre,
+                   String email,
                    String password,
                    int mmr,
                    int latenciaMs,
@@ -20,13 +21,14 @@ public class Jugador extends Usuario {
                    StateRoles rolJuego,
                    StateRegion region) {
         this(null,
+                nombre,
                 email,
                 password,
                 mmr,
                 latenciaMs,
-                rango != null ? rango.getNombre() : null,
-                rolJuego != null ? rolJuego.getNombre() : null,
-                region != null ? region.getNombre() : null,
+                rango != null ? rango.getNombre() : StateRangos.disponibles().get(0).getNombre(),
+                rolJuego != null ? rolJuego.getNombre() : StateRoles.disponibles().get(0).getNombre(),
+                region != null ? region.getNombre() : StateRegion.disponibles().get(0).getNombre(),
                 null,
                 null,
                 null,
@@ -35,30 +37,8 @@ public class Jugador extends Usuario {
                 null);
     }
 
-    public Jugador(String email,
-                   String password,
-                   int mmr,
-                   int latenciaMs,
-                   String rangoNombre,
-                   String rolNombre,
-                   String regionNombre) {
-        this(null, email, password, mmr, latenciaMs, rangoNombre, rolNombre, regionNombre, null, null, null, null, null, null);
-    }
-
     public Jugador(String id,
-                   String email,
-                   String password,
-                   int mmr,
-                   int latenciaMs,
-                   String rangoNombre,
-                   String rolNombre,
-                   String regionNombre,
-                   List<SancionActiva> sancionesActivas,
-                   List<SancionHistorica> sancionesHistoricas) {
-        this(id, email, password, mmr, latenciaMs, rangoNombre, rolNombre, regionNombre, sancionesActivas, sancionesHistoricas, null, null, null, null);
-    }
-
-    public Jugador(String id,
+                   String nombre,
                    String email,
                    String password,
                    int mmr,
@@ -72,7 +52,7 @@ public class Jugador extends Usuario {
                    Boolean suspendido,
                    List<String> scrimsFavoritas,
                    List<ar.edu.tpo.domain.alerta.ScrimAlerta> alertasScrim) {
-        super(id, email, password, mmr, latenciaMs, sancionesActivas, sancionesHistoricas, strikes, suspendido, scrimsFavoritas, alertasScrim);
+        super(id, nombre, email, password, mmr, latenciaMs, sancionesActivas, sancionesHistoricas, strikes, suspendido, scrimsFavoritas, alertasScrim);
         this.rangoNombre = Objects.requireNonNull(rangoNombre, "rango requerido");
         this.rolNombre = Objects.requireNonNull(rolNombre, "rol requerido");
         this.regionNombre = Objects.requireNonNull(regionNombre, "región requerida");

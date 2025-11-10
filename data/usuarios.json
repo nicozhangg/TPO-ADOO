@@ -1,7 +1,8 @@
 {
   "a@a.com": {
     "tipo": "Organizador",
-    "id": "ORG-1",
+    "nombre": "Ana Ortega",
+    "id": "1",
     "email": "a@a.com",
     "passwordHash": "admin123",
     "sancionesActivas": [],
@@ -12,7 +13,8 @@
   },
   "b@b.com": {
     "tipo": "Jugador",
-    "id": "JUG-1",
+    "nombre": "Bruno Pérez",
+    "id": "2",
     "email": "b@b.com",
     "passwordHash": "player123",
     "mmr": 150,
@@ -35,7 +37,8 @@
   },
   "c@c.com": {
     "tipo": "Jugador",
-    "id": "JUG-2",
+    "nombre": "Carla Gómez",
+    "id": "3",
     "email": "c@c.com",
     "passwordHash": "player123",
     "mmr": 500,
@@ -59,7 +62,8 @@
   },
   "d@d.com": {
     "tipo": "Jugador",
-    "id": "JUG-3",
+    "nombre": "Diego Torres",
+    "id": "4",
     "email": "d@d.com",
     "passwordHash": "player123",
     "mmr": 200,
@@ -75,7 +79,8 @@
   },
   "e@e.com": {
     "tipo": "Jugador",
-    "id": "638c5944-d449-4f67-8ef8-af4eef72d687",
+    "nombre": "Elena Ruiz",
+    "id": "5",
     "email": "e@e.com",
     "passwordHash": "player123",
     "mmr": 1500,
@@ -91,7 +96,8 @@
   },
   "lp366841@gmail.com": {
     "tipo": "Jugador",
-    "id": "e7b09afd-d991-4519-947b-c9ba7050eb25",
+    "nombre": "Lucas Pereira",
+    "id": "6",
     "email": "lp366841@gmail.com",
     "passwordHash": "123",
     "mmr": 800,
@@ -101,7 +107,7 @@
     "region": "America",
     "sancionesActivas": [],
     "scrimsFavoritas": [
-      "7f2b1c6d-2f61-4f2b-9bc9-3c0de51a0f7a"
+      "2"
     ],
     "alertasScrim": [
       {
