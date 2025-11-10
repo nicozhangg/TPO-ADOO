@@ -129,39 +129,39 @@ public class UsuarioService {
 
     public boolean agregarScrimFavorita(String email, String idScrim) {
         Usuario usuario = buscar(email);
-        if (!(usuario instanceof Jugador)) {
+        if (!(usuario instanceof Jugador jugador)) {
             throw new IllegalArgumentException("Solo los jugadores pueden guardar scrims favoritas.");
         }
-        boolean agregada = usuario.agregarScrimFavorita(idScrim);
+        boolean agregada = jugador.agregarScrimFavorita(idScrim);
         if (agregada) {
-            repo.actualizar(usuario);
+            repo.actualizar(jugador);
         }
         return agregada;
     }
 
     public List<String> obtenerScrimsFavoritas(String email) {
         Usuario usuario = buscar(email);
-        if (!(usuario instanceof Jugador)) {
+        if (!(usuario instanceof Jugador jugador)) {
             return List.of();
         }
-        return new ArrayList<>(usuario.getScrimsFavoritas());
+        return new ArrayList<>(jugador.getScrimsFavoritas());
     }
 
     public void agregarAlertaScrim(String email, ScrimAlerta alerta) {
         Usuario usuario = buscar(email);
-        if (!(usuario instanceof Jugador)) {
+        if (!(usuario instanceof Jugador jugador)) {
             throw new IllegalArgumentException("Solo los jugadores pueden configurar alertas.");
         }
-        usuario.agregarAlertaScrim(alerta);
-        repo.actualizar(usuario);
+        jugador.agregarAlertaScrim(alerta);
+        repo.actualizar(jugador);
     }
 
     public List<ScrimAlerta> obtenerAlertasScrim(String email) {
         Usuario usuario = buscar(email);
-        if (!(usuario instanceof Jugador)) {
+        if (!(usuario instanceof Jugador jugador)) {
             return List.of();
         }
-        return new ArrayList<>(usuario.getAlertasScrim());
+        return new ArrayList<>(jugador.getAlertasScrim());
     }
 
     public SancionHistorica levantarSancion(String email, int indice) {

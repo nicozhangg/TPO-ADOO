@@ -1,7 +1,5 @@
 package ar.edu.tpo.domain;
 
-import ar.edu.tpo.domain.alerta.ScrimAlerta;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,62 +12,43 @@ public abstract class Usuario {
     private final String nombre;
     private final String email;
     private final String passwordHash;
-    private final int mmr;
-    private final int latenciaMs;
-    private final List<SancionActiva> sancionesActivas;
-    private final List<SancionHistorica> sancionesHistoricas;
-    private final List<String> scrimsFavoritas;
-    private final List<ScrimAlerta> alertasScrim;
+    protected final List<SancionActiva> sancionesActivas;
+    protected final List<SancionHistorica> sancionesHistoricas;
     private int strikeCount;
     private boolean suspendido;
-    private Double kdaHistorico; // opcional
 
-    protected Usuario(String nombre, String email, String passwordHash, int mmr, int latenciaMs) {
-        this(null, nombre, email, passwordHash, mmr, latenciaMs, null, null, null, null, null, null);
-    }
-
-    protected Usuario(String nombre, String email, String passwordHash, int mmr, int latenciaMs, List<SancionActiva> sancionesActivas) {
-        this(null, nombre, email, passwordHash, mmr, latenciaMs, sancionesActivas, null, null, null, null, null);
+    protected Usuario(String nombre, String email, String passwordHash) {
+        this(null, nombre, email, passwordHash, null, null, null, null);
     }
 
     protected Usuario(String nombre, String email, String passwordHash, List<SancionActiva> sancionesActivas) {
-        this(null, nombre, email, passwordHash, 0, 0, sancionesActivas, null, null, null, null, null);
+        this(null, nombre, email, passwordHash, sancionesActivas, null, null, null);
     }
 
     protected Usuario(String nombre, String email, String passwordHash, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
-        this(null, nombre, email, passwordHash, 0, 0, sancionesActivas, sancionesHistoricas, null, null, null, null);
+        this(null, nombre, email, passwordHash, sancionesActivas, sancionesHistoricas, null, null);
     }
 
     protected Usuario(String id, String nombre, String email, String passwordHash, List<SancionActiva> sancionesActivas) {
-        this(id, nombre, email, passwordHash, 0, 0, sancionesActivas, null, null, null, null, null);
+        this(id, nombre, email, passwordHash, sancionesActivas, null, null, null);
     }
 
     protected Usuario(String id, String nombre, String email, String passwordHash, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas) {
-        this(id, nombre, email, passwordHash, 0, 0, sancionesActivas, sancionesHistoricas, null, null, null, null);
-    }
-
-    protected Usuario(String id, String nombre, String email, String passwordHash, int mmr, int latenciaMs, List<SancionActiva> sancionesActivas) {
-        this(id, nombre, email, passwordHash, mmr, latenciaMs, sancionesActivas, null, null, null, null, null);
+        this(id, nombre, email, passwordHash, sancionesActivas, sancionesHistoricas, null, null);
     }
 
     protected Usuario(String id,
                       String nombre,
                       String email,
                       String passwordHash,
-                      int mmr,
-                      int latenciaMs,
                       List<SancionActiva> sancionesActivas,
                       List<SancionHistorica> sancionesHistoricas,
                       Integer strikeCount,
-                      Boolean suspendido,
-                      List<String> scrimsFavoritas,
-                      List<ScrimAlerta> alertasScrim) {
+                      Boolean suspendido) {
         this.id = (id != null && !id.isBlank()) ? id : null;
         this.nombre = Objects.requireNonNull(nombre, "nombre requerido");
         this.email = Objects.requireNonNull(email, "email requerido");
         this.passwordHash = Objects.requireNonNull(passwordHash, "password requerido");
-        this.mmr = mmr;
-        this.latenciaMs = latenciaMs;
         this.sancionesActivas = new ArrayList<>();
         if (sancionesActivas != null) {
             this.sancionesActivas.addAll(sancionesActivas);
@@ -77,14 +56,6 @@ public abstract class Usuario {
         this.sancionesHistoricas = new ArrayList<>();
         if (sancionesHistoricas != null) {
             this.sancionesHistoricas.addAll(sancionesHistoricas);
-        }
-        this.scrimsFavoritas = new ArrayList<>();
-        if (scrimsFavoritas != null) {
-            this.scrimsFavoritas.addAll(scrimsFavoritas);
-        }
-        this.alertasScrim = new ArrayList<>();
-        if (alertasScrim != null) {
-            this.alertasScrim.addAll(alertasScrim);
         }
         this.strikeCount = strikeCount != null ? strikeCount : 0;
         this.suspendido = suspendido != null ? suspendido : false;
@@ -94,10 +65,6 @@ public abstract class Usuario {
     public String getNombre() { return nombre; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
-    public int getMmr() { return mmr; }
-    public int getLatenciaMs() { return latenciaMs; }
-    public Double getKdaHistorico() { return kdaHistorico; }
-    public void setKdaHistorico(Double kdaHistorico) { this.kdaHistorico = kdaHistorico; }
     public int getStrikeCount() { return strikeCount; }
     public boolean estaSuspendido() { return suspendido; }
 
@@ -110,39 +77,9 @@ public abstract class Usuario {
         return Collections.unmodifiableList(sancionesHistoricas);
     }
 
-    public List<String> getScrimsFavoritas() {
-        return Collections.unmodifiableList(scrimsFavoritas);
-    }
-
-    public List<ScrimAlerta> getAlertasScrim() {
-        return Collections.unmodifiableList(alertasScrim);
-    }
-
     public boolean tieneSancionesActivas() {
         depurarSancionesVencidas();
         return !sancionesActivas.isEmpty();
-    }
-
-    public SancionActiva agregarSancion(String motivo, Duration duracion) {
-        if (motivo == null || motivo.isBlank()) {
-            return null;
-        }
-        SancionActiva sancion = SancionActiva.porDuracion(motivo.trim(), duracion);
-        sancionesActivas.add(sancion);
-        depurarSancionesVencidas();
-        return sancion;
-    }
-
-    public boolean agregarScrimFavorita(String idScrim) {
-        if (scrimsFavoritas.contains(idScrim)) {
-            return false;
-        }
-        scrimsFavoritas.add(idScrim);
-        return true;
-    }
-
-    public void agregarAlertaScrim(ScrimAlerta alerta) {
-        alertasScrim.add(alerta);
     }
 
     public int incrementarStrike() {
@@ -189,7 +126,7 @@ public abstract class Usuario {
     public SancionHistorica levantarSancionPorIndice(int indice) {
         depurarSancionesVencidas();
         if (indice < 0 || indice >= sancionesActivas.size()) {
-            throw new IndexOutOfBoundsException("Índice de sanción inválido");
+            throw new IndexOutOfBoundsException("Indice de sancion invalido");
         }
         SancionActiva sancion = sancionesActivas.remove(indice);
         SancionHistorica historica = sancion.aHistorica(LocalDateTime.now());
@@ -198,6 +135,7 @@ public abstract class Usuario {
     }
 
     public abstract String getTipo();
+    public abstract SancionActiva agregarSancion(String motivo, Duration duracion);
 
     public void asignarId(String nuevoId) {
         if (nuevoId == null || nuevoId.isBlank()) {
@@ -213,15 +151,12 @@ public abstract class Usuario {
     public String toString() {
         depurarSancionesVencidas();
         String sanciones = sancionesActivas.isEmpty() ? "" : ", sanciones=" + sancionesActivas;
-        return "%s{id='%s', nombre='%s', email='%s', mmr=%d, latMs=%d%s%s}"
+        return "%s{id='%s', nombre='%s', email='%s'%s}"
                 .formatted(
                         getTipo(),
                         id,
                         nombre,
                         email,
-                        mmr,
-                        latenciaMs,
-                        kdaHistorico != null ? ", kdaHist=" + kdaHistorico : "",
                         sanciones
                 );
     }

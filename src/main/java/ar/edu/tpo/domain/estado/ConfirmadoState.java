@@ -21,20 +21,13 @@ public class ConfirmadoState extends EstadoScrim {
     @Override
     public void confirmarEquipo(Scrim scrim, String nombreEquipo) {
         Equipo equipo = scrim.obtenerEquipoPorNombre(nombreEquipo);
-        scrim.getConfirmacionesEquipos().put(equipo.getNombre(), Boolean.TRUE);
+        scrim.establecerConfirmacionEquipo(equipo.getNombre(), true);
         // Ya está confirmado, no necesita recalcular
     }
     
     @Override
     public void confirmarJugador(Scrim scrim, String email) {
-        // Legacy: confirmar el equipo del jugador
-        if (scrim.getEquipo1().contieneJugador(email)) {
-            confirmarEquipo(scrim, scrim.getEquipo1().getNombre());
-        } else if (scrim.getEquipo2().contieneJugador(email)) {
-            confirmarEquipo(scrim, scrim.getEquipo2().getNombre());
-        } else {
-            throw new IllegalStateException("El jugador no está en el scrim");
-        }
+        scrim.confirmarJugador(email);
     }
     
     @Override
@@ -51,8 +44,7 @@ public class ConfirmadoState extends EstadoScrim {
     public void recalcularEstado(Scrim scrim) {
         if (!scrim.ambosEquiposCompletos()) {
             // Volver a BUSCANDO_JUGADORES
-            scrim.getConfirmacionesEquipos().put(scrim.getEquipo1().getNombre(), Boolean.FALSE);
-            scrim.getConfirmacionesEquipos().put(scrim.getEquipo2().getNombre(), Boolean.FALSE);
+            scrim.reiniciarConfirmacionesDeEquipos();
             scrim.cambiarEstado(BuscandoJugadoresState.INSTANCIA);
             return;
         }

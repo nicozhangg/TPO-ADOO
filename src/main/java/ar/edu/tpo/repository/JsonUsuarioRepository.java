@@ -85,20 +85,22 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                 data.addProperty("id", usuario.getId());
                 data.addProperty("email", usuario.getEmail());
                 data.addProperty("passwordHash", usuario.getPasswordHash());
+                List<String> favoritas;
+                List<ScrimAlerta> alertas;
                 if (usuario instanceof Jugador jugador) {
-                    data.addProperty("mmr", usuario.getMmr());
-                    data.addProperty("latenciaMs", usuario.getLatenciaMs());
-                    if (usuario.getKdaHistorico() != null) {
-                        data.addProperty("kdaHistorico", usuario.getKdaHistorico());
+                    data.addProperty("mmr", jugador.getMmr());
+                    data.addProperty("latenciaMs", jugador.getLatenciaMs());
+                    if (jugador.getKdaHistorico() != null) {
+                        data.addProperty("kdaHistorico", jugador.getKdaHistorico());
                     }
                     data.addProperty("rango", jugador.getRangoNombre());
                     data.addProperty("rolPreferido", jugador.getRolNombre());
                     data.addProperty("region", jugador.getRegionNombre());
+                    favoritas = jugador.getScrimsFavoritas();
+                    alertas = jugador.getAlertasScrim();
                 } else {
-                    // Solo persistir KDA si existe para otros tipos
-                    if (usuario.getKdaHistorico() != null) {
-                        data.addProperty("kdaHistorico", usuario.getKdaHistorico());
-                    }
+                    favoritas = List.of();
+                    alertas = List.of();
                 }
                 JsonArray sanciones = new JsonArray();
                 usuario.getSancionesActivasSinDepurar().forEach(sancion -> {
@@ -124,12 +126,12 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                 if (!sancionesHistoricas.isEmpty()) {
                     data.add("sancionesHistoricas", sancionesHistoricas);
                 }
-                JsonArray favoritas = new JsonArray();
-                usuario.getScrimsFavoritas().forEach(favoritas::add);
-                data.add("scrimsFavoritas", favoritas);
+                JsonArray favoritasJson = new JsonArray();
+                favoritas.forEach(favoritasJson::add);
+                data.add("scrimsFavoritas", favoritasJson);
 
-                JsonArray alertas = new JsonArray();
-                usuario.getAlertasScrim().forEach(alerta -> {
+                JsonArray alertasJson = new JsonArray();
+                alertas.forEach(alerta -> {
                     JsonObject alertaJson = new JsonObject();
                     if (alerta.getJuego() != null && !alerta.getJuego().isBlank()) {
                         alertaJson.addProperty("juego", alerta.getJuego());
@@ -149,9 +151,9 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                     if (alerta.getFormato() != null && !alerta.getFormato().isBlank()) {
                         alertaJson.addProperty("formato", alerta.getFormato());
                     }
-                    alertas.add(alertaJson);
+                    alertasJson.add(alertaJson);
                 });
-                data.add("alertasScrim", alertas);
+                data.add("alertasScrim", alertasJson);
                 data.addProperty("strikeCount", usuario.getStrikeCount());
                 data.addProperty("suspendido", usuario.estaSuspendido());
                 root.add(usuario.getEmail(), data);
@@ -248,8 +250,8 @@ public class JsonUsuarioRepository implements UsuarioRepository {
             requierePersistencia = true;
         }
 
-        if (kda != null) {
-            usuario.setKdaHistorico(kda);
+        if (kda != null && usuario instanceof Jugador jugador) {
+            jugador.setKdaHistorico(kda);
         }
         return usuario;
     }

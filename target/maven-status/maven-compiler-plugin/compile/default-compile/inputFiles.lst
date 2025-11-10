@@ -1,6 +1,7 @@
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\controller\ConductaController.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\controller\ScrimController.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\controller\UsuarioController.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\alerta\ScrimAlerta.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\Equipo.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\Estadistica.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\estado\BuscandoJugadoresState.java
@@ -14,9 +15,7 @@ C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\Jugador.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\KDA.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\motivo\Motivo.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\motivo\MotivoAbandono.java
-C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\motivo\MotivoCooldown.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\motivo\MotivoNoShow.java
-C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\motivo\MotivoStrike.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\Organizador.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\rangos\Ascendente.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\rangos\Bronce.java
@@ -40,10 +39,21 @@ C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\roles\Duelista
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\roles\Iniciador.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\roles\StateRoles.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\SancionActiva.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\SancionHistorica.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\Scrim.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\ScrimEquipo.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\Usuario.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\Waitlist.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\domain\WaitlistEntry.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\Main.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\notification\LoggingNotificacionDecorator.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\notification\MailStrategy.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\notification\Notificacion.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\notification\NotificacionStrategy.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\notification\NotificacionStrategyDecorator.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\notification\Notificador.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\notification\NotificationService.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\notification\RespaldoNotificacionDecorator.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\repository\json\ScrimJsonAdapter.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\repository\JsonScrimRepository.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\repository\JsonUsuarioRepository.java
@@ -56,6 +66,7 @@ C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\service\estrategias\E
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\service\estrategias\EstrategiaPorLatencia.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\service\estrategias\EstrategiaPorMMR.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\service\MockUsuarioActualPort.java
+C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\service\SancionSchedulerService.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\service\scrim\ScrimCicloDeVidaService.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\service\scrim\ScrimLobbyService.java
 C:\Users\Nicolas\Desktop\TPO-ADOO\src\main\java\ar\edu\tpo\service\scrim\ScrimSchedulerService.java

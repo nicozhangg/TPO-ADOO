@@ -2,14 +2,12 @@ ar\edu\tpo\service\ConductaService.class
 ar\edu\tpo\domain\Scrim.class
 ar\edu\tpo\domain\RegistroConducta.class
 ar\edu\tpo\domain\Usuario.class
-ar\edu\tpo\domain\motivo\MotivoCooldown.class
 ar\edu\tpo\domain\RegistroConducta$Entrada.class
 ar\edu\tpo\Main.class
 ar\edu\tpo\domain\motivo\Motivo.class
 ar\edu\tpo\domain\KDA.class
 ar\edu\tpo\domain\WaitlistEntry.class
 ar\edu\tpo\domain\Resultado.class
-ar\edu\tpo\domain\motivo\MotivoStrike.class
 ar\edu\tpo\repository\ScrimRepository.class
 ar\edu\tpo\service\UsuarioService.class
 ar\edu\tpo\service\estrategias\EstrategiaEmparejamiento.class

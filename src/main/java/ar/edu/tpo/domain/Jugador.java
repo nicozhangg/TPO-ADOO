@@ -1,16 +1,25 @@
 package ar.edu.tpo.domain;
 
+import ar.edu.tpo.domain.alerta.ScrimAlerta;
 import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.regiones.StateRegion;
 import ar.edu.tpo.domain.roles.StateRoles;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 public class Jugador extends Usuario {
+    private final int mmr;
+    private final int latenciaMs;
     private final String rangoNombre;
     private final String rolNombre;
     private final String regionNombre;
+    private final List<String> scrimsFavoritas;
+    private final List<ScrimAlerta> alertasScrim;
+    private Double kdaHistorico;
 
     public Jugador(String nombre,
                    String email,
@@ -51,11 +60,37 @@ public class Jugador extends Usuario {
                    Integer strikes,
                    Boolean suspendido,
                    List<String> scrimsFavoritas,
-                   List<ar.edu.tpo.domain.alerta.ScrimAlerta> alertasScrim) {
-        super(id, nombre, email, password, mmr, latenciaMs, sancionesActivas, sancionesHistoricas, strikes, suspendido, scrimsFavoritas, alertasScrim);
+                   List<ScrimAlerta> alertasScrim) {
+        super(id, nombre, email, password, sancionesActivas, sancionesHistoricas, strikes, suspendido);
+        this.mmr = mmr;
+        this.latenciaMs = latenciaMs;
         this.rangoNombre = Objects.requireNonNull(rangoNombre, "rango requerido");
         this.rolNombre = Objects.requireNonNull(rolNombre, "rol requerido");
         this.regionNombre = Objects.requireNonNull(regionNombre, "región requerida");
+        this.scrimsFavoritas = new ArrayList<>();
+        if (scrimsFavoritas != null) {
+            this.scrimsFavoritas.addAll(scrimsFavoritas);
+        }
+        this.alertasScrim = new ArrayList<>();
+        if (alertasScrim != null) {
+            this.alertasScrim.addAll(alertasScrim);
+        }
+    }
+
+    public int getMmr() {
+        return mmr;
+    }
+
+    public int getLatenciaMs() {
+        return latenciaMs;
+    }
+
+    public Double getKdaHistorico() {
+        return kdaHistorico;
+    }
+
+    public void setKdaHistorico(Double kdaHistorico) {
+        this.kdaHistorico = kdaHistorico;
     }
 
     public StateRangos getRango() {
@@ -82,6 +117,37 @@ public class Jugador extends Usuario {
         return regionNombre;
     }
 
+    public List<String> getScrimsFavoritas() {
+        return Collections.unmodifiableList(scrimsFavoritas);
+    }
+
+    public List<ScrimAlerta> getAlertasScrim() {
+        return Collections.unmodifiableList(alertasScrim);
+    }
+
+    @Override
+    public SancionActiva agregarSancion(String motivo, Duration duracion) {
+        if (motivo == null || motivo.isBlank()) {
+            return null;
+        }
+        SancionActiva sancion = SancionActiva.porDuracion(motivo.trim(), duracion);
+        sancionesActivas.add(sancion);
+        removerSancionesVencidas();
+        return sancion;
+    }
+
+    public boolean agregarScrimFavorita(String idScrim) {
+        if (scrimsFavoritas.contains(idScrim)) {
+            return false;
+        }
+        scrimsFavoritas.add(idScrim);
+        return true;
+    }
+
+    public void agregarAlertaScrim(ScrimAlerta alerta) {
+        alertasScrim.add(alerta);
+    }
+
     @Override
     public String getTipo() {
         return "Jugador";
@@ -89,10 +155,21 @@ public class Jugador extends Usuario {
 
     @Override
     public String toString() {
-        return super.toString() +
-                ", rango='" + rangoNombre + '\'' +
-                ", rolPreferido='" + rolNombre + '\'' +
-                ", region='" + regionNombre + '\'';
+        String base = super.toString();
+        if (base.endsWith("}")) {
+            base = base.substring(0, base.length() - 1);
+        }
+        StringBuilder sb = new StringBuilder(base);
+        sb.append(", mmr=").append(mmr)
+                .append(", latMs=").append(latenciaMs)
+                .append(", rango='").append(rangoNombre).append('\'')
+                .append(", rolPreferido='").append(rolNombre).append('\'')
+                .append(", region='").append(regionNombre).append('\'');
+        if (kdaHistorico != null) {
+            sb.append(", kdaHist=").append(kdaHistorico);
+        }
+        sb.append('}');
+        return sb.toString();
     }
 }
 

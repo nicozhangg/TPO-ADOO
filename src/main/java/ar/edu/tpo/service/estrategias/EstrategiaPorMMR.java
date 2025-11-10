@@ -1,5 +1,6 @@
 package ar.edu.tpo.service.estrategias;
 
+import ar.edu.tpo.domain.Jugador;
 import ar.edu.tpo.domain.Scrim;
 import ar.edu.tpo.domain.Usuario;
 
@@ -10,7 +11,9 @@ public class EstrategiaPorMMR implements EstrategiaEmparejamiento {
     @Override
     public List<Usuario> seleccionar(List<Usuario> candidatos, Scrim scrim) {
         return candidatos.stream()
-                .filter(u -> u.getMmr() >= scrim.getRangoMin() && u.getMmr() <= scrim.getRangoMax())
+                .filter(u -> u instanceof Jugador jugador &&
+                        jugador.getMmr() >= scrim.getRangoMin() &&
+                        jugador.getMmr() <= scrim.getRangoMax())
                 .collect(Collectors.toList());
     }
 }

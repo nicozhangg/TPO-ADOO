@@ -1,5 +1,6 @@
 package ar.edu.tpo.domain;
 
+import java.time.Duration;
 import java.util.List;
 
 public class Organizador extends Usuario {
@@ -13,7 +14,18 @@ public class Organizador extends Usuario {
     }
 
     public Organizador(String id, String nombre, String email, String password, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas, Integer strikes, Boolean suspendido) {
-        super(id, nombre, email, password, 0, 0, sancionesActivas, sancionesHistoricas, strikes, suspendido, null, null);
+        super(id, nombre, email, password, sancionesActivas, sancionesHistoricas, strikes, suspendido);
+    }
+
+    @Override
+    public SancionActiva agregarSancion(String motivo, Duration duracion) {
+        if (motivo == null || motivo.isBlank()) {
+            return null;
+        }
+        SancionActiva sancion = SancionActiva.porDuracion(motivo.trim(), duracion);
+        sancionesActivas.add(sancion);
+        removerSancionesVencidas();
+        return sancion;
     }
 
     @Override

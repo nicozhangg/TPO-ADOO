@@ -8,7 +8,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -158,7 +157,7 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
         if (o.has("confirmacionesEquipos") && o.get("confirmacionesEquipos").isJsonObject()) {
             JsonObject confEquipos = o.getAsJsonObject("confirmacionesEquipos");
             for (String key : confEquipos.keySet()) {
-                scrim.getConfirmacionesEquipos().put(key, confEquipos.get(key).getAsBoolean());
+            scrim.establecerConfirmacionEquipo(key, confEquipos.get(key).getAsBoolean());
             }
         }
 
@@ -187,8 +186,8 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
                     }
                 }
             }
-            scrim.getConfirmacionesEquipos().put(scrim.getEquipo1().getNombre(), equipo1Confirmado);
-            scrim.getConfirmacionesEquipos().put(scrim.getEquipo2().getNombre(), equipo2Confirmado);
+            scrim.establecerConfirmacionEquipo(scrim.getEquipo1().getNombre(), equipo1Confirmado);
+            scrim.establecerConfirmacionEquipo(scrim.getEquipo2().getNombre(), equipo2Confirmado);
         }
 
         if (o.has("resultado") && o.get("resultado").isJsonObject()) {
@@ -210,7 +209,7 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
                         je.get("rating").getAsDouble(),
                         LocalDateTime.parse(je.get("fechaCarga").getAsString())
                 );
-                addToList(scrim, "estadisticas", estadistica);
+                scrim.agregarEstadisticaDirecta(estadistica);
             }
         }
 
@@ -222,7 +221,7 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
                         LocalDateTime.parse(jw.get("fechaSolicitud").getAsString()),
                         jw.get("orden").getAsInt()
                 );
-                addToList(scrim, "listaEspera", entry);
+                scrim.agregarWaitlistEntryDirecto(entry);
             }
         }
 
@@ -248,17 +247,6 @@ public class ScrimJsonAdapter implements JsonSerializer<Scrim>, JsonDeserializer
         for (JsonElement element : equipoJson.getAsJsonArray("jugadores")) {
             String email = element.getAsString();
             equipo.agregarJugador(email);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> void addToList(Scrim scrim, String fieldName, T value) {
-        try {
-            Field field = Scrim.class.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            ((List<T>) field.get(scrim)).add(value);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new JsonParseException("No se pudo reconstruir lista '" + fieldName + "': " + e.getMessage(), e);
         }
     }
 

@@ -5,8 +5,6 @@ import ar.edu.tpo.domain.rangos.StateRangos;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,15 +27,13 @@ public class Scrim {
 
     // EQUIPO VS EQUIPO: cupo = jugadores por equipo (ej. 5 para 5v5)
     private final int cupo;                                    // jugadores por equipo
-    private final Equipo equipo1;                             // equipo del creador
-    private final Equipo equipo2;                              // equipo del rival
-    private final LinkedHashMap<String, Boolean> confirmacionesEquipos = new LinkedHashMap<>(); // confirmación por equipo (nombre)
+    private final ScrimEquipo equipos;
 
     private EstadoScrim estado = ar.edu.tpo.domain.estado.BuscandoJugadoresState.INSTANCIA;
 
     private Resultado resultado;
     private final List<Estadistica> estadisticas = new ArrayList<>();
-    private final List<WaitlistEntry> listaEspera = new ArrayList<>();
+    private final Waitlist waitlist = new Waitlist();
 
     public Scrim(String juego, String emailCreador,
                  int rangoMin, int rangoMax, int cupo,
@@ -64,11 +60,7 @@ public class Scrim {
         this.modalidad = Objects.requireNonNull(modalidad, "Modalidad requerida").trim();
         if (this.modalidad.isEmpty()) throw new IllegalArgumentException("Modalidad requerida");
 
-        // Crear equipos: equipo1 (creador) y equipo2 (rival)
-        this.equipo1 = new Equipo("Equipo 1");
-        this.equipo2 = new Equipo("Equipo 2");
-        this.confirmacionesEquipos.put(equipo1.getNombre(), Boolean.FALSE);
-        this.confirmacionesEquipos.put(equipo2.getNombre(), Boolean.FALSE);
+        this.equipos = new ScrimEquipo(cupo);
     }
 
     // ===== Agenda =====
@@ -87,7 +79,7 @@ public class Scrim {
     
     // Método legacy: agrega al equipo del creador si es el creador, sino al rival
     public void agregarJugador(String email){
-        estado.agregarJugadorAEquipo(this, email, equipo1.getNombre());
+        estado.agregarJugadorAEquipo(this, email, equipos.getEquipo1().getNombre());
     }
 
     public void quitarJugador(String email){
@@ -100,13 +92,8 @@ public class Scrim {
     
     // Método legacy: confirma el equipo del jugador
     public void confirmarJugador(String email){
-        if (equipo1.contieneJugador(email)) {
-            estado.confirmarEquipo(this, equipo1.getNombre());
-        } else if (equipo2.contieneJugador(email)) {
-            estado.confirmarEquipo(this, equipo2.getNombre());
-        } else {
-            throw new IllegalArgumentException("El jugador no pertenece a ningún equipo");
-        }
+        String equipo = equipos.equipoDe(email);
+        estado.confirmarEquipo(this, equipo);
     }
 
     public void iniciar(){
@@ -128,25 +115,15 @@ public class Scrim {
     // ===== Métodos públicos para que los estados modifiquen el scrim =====
     // (públicos porque los estados están en un subpaquete)
     public void agregarJugadorAEquipoDirecto(String email, String nombreEquipo){
-        Equipo equipo = obtenerEquipoPorNombre(nombreEquipo);
-        if (equipo.getCantidadJugadores() >= cupo) {
-            throw new IllegalStateException("El equipo " + nombreEquipo + " tiene el cupo completo (" + cupo + " jugadores)");
-        }
-        equipo.agregarJugador(email);
+        equipos.agregarJugadorAEquipo(email, nombreEquipo);
     }
 
     public void quitarJugadorDirecto(String email){
-        if (equipo1.contieneJugador(email)) {
-            equipo1.quitarJugador(email);
-        } else if (equipo2.contieneJugador(email)) {
-            equipo2.quitarJugador(email);
-        }
+        equipos.quitarJugador(email);
     }
     
     public Equipo obtenerEquipoPorNombre(String nombreEquipo) {
-        if (equipo1.getNombre().equals(nombreEquipo)) return equipo1;
-        if (equipo2.getNombre().equals(nombreEquipo)) return equipo2;
-        throw new IllegalArgumentException("Equipo no encontrado: " + nombreEquipo);
+        return equipos.obtenerEquipoPorNombre(nombreEquipo);
     }
 
     public void cambiarEstado(EstadoScrim nuevoEstado){
@@ -156,33 +133,27 @@ public class Scrim {
     public void agregarEstadisticaDirecta(Estadistica e){
         estadisticas.add(e);
     }
+    public void agregarWaitlistEntryDirecto(WaitlistEntry entry) {
+        waitlist.agregarDesdePersistencia(entry);
+    }
     public boolean agregarAListaEspera(String emailJugador){
-        if (estaEnListaEspera(emailJugador)) {
-            return false;
-        }
-        listaEspera.add(new WaitlistEntry(emailJugador, LocalDateTime.now(), listaEspera.size()+1));
-        return true;
+        return waitlist.agregar(emailJugador);
     }
 
     public boolean quitarDeListaEspera(String emailJugador) {
-        boolean removed = listaEspera.removeIf(entry -> entry.emailJugador().equalsIgnoreCase(emailJugador));
-        if (removed) {
-            reordenarListaEspera();
-        }
-        return removed;
+        return waitlist.quitar(emailJugador);
     }
 
     public boolean estaEnListaEspera(String emailJugador) {
-        return listaEspera.stream().anyMatch(entry -> entry.emailJugador().equalsIgnoreCase(emailJugador));
+        return waitlist.esta(emailJugador);
     }
 
     public boolean hayLugarEnEquipo(String nombreEquipo) {
-        Equipo equipo = obtenerEquipoPorNombre(nombreEquipo);
-        return equipo.getCantidadJugadores() < cupo;
+        return equipos.hayLugarEnEquipo(nombreEquipo);
     }
 
     public boolean hayCupoDisponible() {
-        return getTotalJugadores() < cupo * 2;
+        return equipos.hayCupoDisponible();
     }
 
     // ===== Getters =====
@@ -199,49 +170,37 @@ public class Scrim {
     public LocalDateTime getInicio(){ return inicio; }
     public LocalDateTime getFin(){ return fin; }
     public int getCupo(){ return cupo; }
-    public Equipo getEquipo1(){ return equipo1; }
-    public Equipo getEquipo2(){ return equipo2; }
+    public Equipo getEquipo1(){ return equipos.getEquipo1(); }
+    public Equipo getEquipo2(){ return equipos.getEquipo2(); }
     
     // Métodos legacy para compatibilidad
     public Set<String> getJugadores(){ 
-        Set<String> todos = new LinkedHashSet<>();
-        todos.addAll(equipo1.getJugadores());
-        todos.addAll(equipo2.getJugadores());
-        return Collections.unmodifiableSet(todos);
+        return Collections.unmodifiableSet(equipos.getJugadores());
     }
     
     public Map<String, Boolean> getConfirmaciones(){ 
-        // Convertir confirmaciones de equipos a formato legacy (por jugador)
-        Map<String, Boolean> conf = new LinkedHashMap<>();
-        for (String jugador : equipo1.getJugadores()) {
-            conf.put(jugador, confirmacionesEquipos.getOrDefault(equipo1.getNombre(), Boolean.FALSE));
-        }
-        for (String jugador : equipo2.getJugadores()) {
-            conf.put(jugador, confirmacionesEquipos.getOrDefault(equipo2.getNombre(), Boolean.FALSE));
-        }
-        return conf;
+        return equipos.getConfirmacionesPorJugador();
     }
     
     public Map<String, Boolean> getConfirmacionesEquipos(){ 
-        return confirmacionesEquipos; 
+        return equipos.getConfirmacionesPorEquipo();
     }
     
     public int getTotalJugadores() {
-        return equipo1.getCantidadJugadores() + equipo2.getCantidadJugadores();
+        return equipos.getTotalJugadores();
     }
     
     public boolean ambosEquiposCompletos() {
-        return equipo1.getCantidadJugadores() >= cupo && equipo2.getCantidadJugadores() >= cupo;
+        return equipos.ambosEquiposCompletos();
     }
     
     public boolean ambosEquiposConfirmados() {
-        return Boolean.TRUE.equals(confirmacionesEquipos.get(equipo1.getNombre())) &&
-               Boolean.TRUE.equals(confirmacionesEquipos.get(equipo2.getNombre()));
+        return equipos.ambosEquiposConfirmados();
     }
 
     public Resultado getResultado(){ return resultado; }
     public void setResultado(Resultado r){ this.resultado = r; }
-    public List<WaitlistEntry> getListaEspera(){ return Collections.unmodifiableList(listaEspera); }
+    public List<WaitlistEntry> getListaEspera(){ return waitlist.comoListaInmutable(); }
     public List<Estadistica> getEstadisticas(){ return Collections.unmodifiableList(estadisticas); }
 
     @Override public String toString(){
@@ -249,8 +208,8 @@ public class Scrim {
         return "Scrim{id='%s', juego='%s', formato='%s', region='%s', rango=%s-%s, cupo=%d/equipo, latenciaMax=%dms, modalidad='%s', equipo1=%d/%d, equipo2=%d/%d, estado=%s%s}"
                 .formatted(id, juego, formato, region, nombreRangoPara(rangoMin), nombreRangoPara(rangoMax), cupo,
                     latenciaMaxMs, modalidad,
-                    equipo1.getCantidadJugadores(), cupo,
-                    equipo2.getCantidadJugadores(), cupo,
+                    equipos.getEquipo1().getCantidadJugadores(), cupo,
+                    equipos.getEquipo2().getCantidadJugadores(), cupo,
                     estado.getNombre(), ventana);
     }
 
@@ -264,13 +223,6 @@ public class Scrim {
                 .orElse(puntos + " MMR");
     }
 
-    private void reordenarListaEspera() {
-        for (int i = 0; i < listaEspera.size(); i++) {
-            WaitlistEntry entry = listaEspera.get(i);
-            listaEspera.set(i, new WaitlistEntry(entry.emailJugador(), entry.fechaSolicitud(), i + 1));
-        }
-    }
-
     public void asignarId(String nuevoId) {
         if (nuevoId == null || nuevoId.isBlank()) {
             throw new IllegalArgumentException("El ID del scrim no puede ser vacío.");
@@ -279,5 +231,17 @@ public class Scrim {
             throw new IllegalStateException("El scrim ya tiene un ID asignado.");
         }
         this.id = nuevoId;
+    }
+
+    public void establecerConfirmacionEquipo(String nombreEquipo, boolean confirmado) {
+        equipos.establecerConfirmacion(nombreEquipo, confirmado);
+    }
+
+    public void reiniciarConfirmacionesDeEquipos() {
+        equipos.reiniciarConfirmaciones();
+    }
+
+    public ScrimEquipo getEquipos() {
+        return equipos;
     }
 }
