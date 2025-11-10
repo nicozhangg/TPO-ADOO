@@ -28,6 +28,10 @@ public class Jugador extends Usuario {
                 rolJuego != null ? rolJuego.getNombre() : null,
                 region != null ? region.getNombre() : null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null);
     }
 
@@ -38,7 +42,7 @@ public class Jugador extends Usuario {
                    String rangoNombre,
                    String rolNombre,
                    String regionNombre) {
-        this(null, email, password, mmr, latenciaMs, rangoNombre, rolNombre, regionNombre, null, null);
+        this(null, email, password, mmr, latenciaMs, rangoNombre, rolNombre, regionNombre, null, null, null, null, null, null);
     }
 
     public Jugador(String id,
@@ -51,7 +55,24 @@ public class Jugador extends Usuario {
                    String regionNombre,
                    List<SancionActiva> sancionesActivas,
                    List<SancionHistorica> sancionesHistoricas) {
-        super(id, email, password, mmr, latenciaMs, sancionesActivas, sancionesHistoricas);
+        this(id, email, password, mmr, latenciaMs, rangoNombre, rolNombre, regionNombre, sancionesActivas, sancionesHistoricas, null, null, null, null);
+    }
+
+    public Jugador(String id,
+                   String email,
+                   String password,
+                   int mmr,
+                   int latenciaMs,
+                   String rangoNombre,
+                   String rolNombre,
+                   String regionNombre,
+                   List<SancionActiva> sancionesActivas,
+                   List<SancionHistorica> sancionesHistoricas,
+                   Integer strikes,
+                   Boolean suspendido,
+                   List<String> scrimsFavoritas,
+                   List<ar.edu.tpo.domain.alerta.ScrimAlerta> alertasScrim) {
+        super(id, email, password, mmr, latenciaMs, sancionesActivas, sancionesHistoricas, strikes, suspendido, scrimsFavoritas, alertasScrim);
         this.rangoNombre = Objects.requireNonNull(rangoNombre, "rango requerido");
         this.rolNombre = Objects.requireNonNull(rolNombre, "rol requerido");
         this.regionNombre = Objects.requireNonNull(regionNombre, "región requerida");

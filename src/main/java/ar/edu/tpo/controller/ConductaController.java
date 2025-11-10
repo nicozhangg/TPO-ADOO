@@ -8,7 +8,5 @@ public class ConductaController {
 
     public void registrarAbandono(String email){ service.registrarAbandono(email); }
     public void registrarNoShow(String email){ service.registrarNoShow(email); }
-    public void registrarStrike(String email){ service.registrarStrike(email); }
-    public void registrarCooldown(String email){ service.registrarCooldown(email); }
     public void listarHistorial(){ service.listarHistorial(); }
 }

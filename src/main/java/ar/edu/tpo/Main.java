@@ -6,6 +6,8 @@ import ar.edu.tpo.domain.Organizador;
 import ar.edu.tpo.domain.SancionActiva;
 import ar.edu.tpo.domain.SancionHistorica;
 import ar.edu.tpo.domain.Usuario;
+import ar.edu.tpo.domain.Scrim;
+import ar.edu.tpo.domain.alerta.ScrimAlerta;
 import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.regiones.StateRegion;
 import ar.edu.tpo.domain.roles.StateRoles;
@@ -154,29 +156,32 @@ public class Main {
         System.out.println("Rango: " + jugador.getRangoNombre() +
                 " | Rol preferido: " + jugador.getRolNombre() +
                 " | Región: " + jugador.getRegionNombre());
-        System.out.println("1. Listar Scrims");
-        System.out.println("2. Unirse a Scrim");
-        System.out.println("3. Salir de Scrim");
-        System.out.println("4. Confirmar participación en Scrim");
+        System.out.println("1. Listar scrims");
+        System.out.println("2. Unirse a scrim");
+        System.out.println("3. Salir de scrim");
+        System.out.println("4. Confirmar participación en scrim");
         System.out.println("5. Actualizar perfil");
+        System.out.println("6. Guardar scrim favorita");
+        System.out.println("7. Ver scrims favoritas");
+        System.out.println("8. Configurar alerta de scrim");
+        System.out.println("9. Ver alertas configuradas");
         System.out.println("0. Cerrar sesión");
         System.out.print("Seleccione una opción: ");
     }
 
     private static void mostrarMenuOrganizer(Organizador organizador) {
-        System.out.println("\n=== MENÚ ORGANIZER ===");
+        System.out.println("\n=== MENÚ ORGANIZADOR ===");
         System.out.println("Usuario: " + organizador.getEmail());
         System.out.println("1. Listar Scrims");
         System.out.println("2. Crear Scrim");
         System.out.println("3. Confirmar Jugador");
         System.out.println("4. Sacar Jugador");
-        System.out.println("5. Programar Scrim");
-        System.out.println("6. Eliminar programación (limpiar fechas)");
+        System.out.println("5. Reprogramar fecha de Scrim");
         System.out.println("7. Iniciar Scrim");
         System.out.println("8. Finalizar Scrim");
         System.out.println("9. Cancelar Scrim");
         System.out.println("10. Cargar Resultado");
-        System.out.println("11. Agregar Suplente");
+        System.out.println("11. Ver suplentes");
         System.out.println("12. Agregar sanción a jugador");
         System.out.println("13. Ver sanciones activas de un jugador");
         System.out.println("14. Ver sanciones históricas de un jugador");
@@ -211,28 +216,162 @@ public class Main {
                 scrimController.listar();
             }
             case 2 -> {
-                System.out.print("Ingrese ID del scrim: ");
-                String idScrim = scanner.nextLine().trim();
-                System.out.print("Nombre del equipo (o vacío para auto-asignar): ");
-                String nombreEquipo = scanner.nextLine().trim();
-                String emailJugador = jugador.getEmail();
-                if (nombreEquipo.isBlank()) {
-                    scrimController.unirse(idScrim, emailJugador);
-                } else {
-                    scrimController.unirseAEquipo(idScrim, emailJugador, nombreEquipo);
+                String idScrim = leerIdScrimValido(false);
+                if (idScrim != null) {
+                    String emailJugador = jugador.getEmail();
+                    boolean finalizado = false;
+                    while (!finalizado) {
+                        Scrim scrim;
+                        try {
+                            scrim = scrimController.buscar(idScrim);
+                        } catch (Exception e) {
+                            System.out.println("No se pudo encontrar el scrim: " + e.getMessage());
+                            break;
+                        }
+
+                        String equipoSeleccionado = seleccionarEquipoNumerico();
+                        String otroEquipo = equipoSeleccionado.equals("Equipo 1") ? "Equipo 2" : "Equipo 1";
+                        boolean equipoSeleccionadoLleno = equipoLleno(scrim, equipoSeleccionado);
+                        boolean otroEquipoLleno = equipoLleno(scrim, otroEquipo);
+
+                        if (equipoSeleccionadoLleno) {
+                            if (!otroEquipoLleno) {
+                                boolean decisionTomada = false;
+                                while (!decisionTomada) {
+                                    System.out.println("El " + equipoSeleccionado + " está completo. ¿Deseás unirte al " + otroEquipo + "?");
+                                    System.out.println("1. Sí");
+                                    System.out.println("2. No, cancelar");
+                                    int respuesta = leerEnteroConMensaje("Opción: ");
+                                    if (respuesta == 1) {
+                                        equipoSeleccionado = otroEquipo;
+                                        decisionTomada = true;
+                                    } else if (respuesta == 2) {
+                                        System.out.println("Operación cancelada. No se unió a la scrim.");
+                                        finalizado = true;
+                                        decisionTomada = true;
+                                    } else {
+                                        System.out.println("Opción inválida. Intente nuevamente.");
+                                    }
+                                }
+                                if (finalizado) {
+                                    break;
+                                }
+                            } else {
+                                boolean decisionTomada = false;
+                                while (!decisionTomada) {
+                                    System.out.println("Ambos equipos están completos. ¿Deseás ingresar a la lista de suplentes?");
+                                    System.out.println("1. Sí, agregarme como suplente");
+                                    System.out.println("2. No, cancelar");
+                                    int respuesta = leerEnteroConMensaje("Opción: ");
+                                    if (respuesta == 1) {
+                                        try {
+                                            scrimController.unirseAEquipo(idScrim, emailJugador, equipoSeleccionado);
+                                        } catch (Exception e) {
+                                            System.out.println("Error: " + e.getMessage());
+                                        }
+                                        finalizado = true;
+                                        decisionTomada = true;
+                                    } else if (respuesta == 2) {
+                                        System.out.println("Operación cancelada. No se unió a la scrim.");
+                                        finalizado = true;
+                                        decisionTomada = true;
+                                    } else {
+                                        System.out.println("Opción inválida. Intente nuevamente.");
+                                    }
+                                }
+                                break;
+                            }
+                        }
+
+                        if (!finalizado) {
+                            try {
+                                scrimController.unirseAEquipo(idScrim, emailJugador, equipoSeleccionado);
+                                finalizado = true;
+                            } catch (Exception e) {
+                                System.out.println("Error al unirse: " + e.getMessage());
+                                finalizado = true;
+                            }
+                        }
+                    }
                 }
             }
             case 3 -> {
-                System.out.print("Ingrese ID del scrim del que desea salir: ");
-                String idScrimSalir = scanner.nextLine().trim();
+                String idScrimSalir = leerIdScrimValido();
                 scrimController.salir(idScrimSalir, jugador.getEmail());
             }
             case 4 -> {
-                System.out.print("Ingrese ID del scrim a confirmar: ");
-                String idScrimConfirmar = scanner.nextLine().trim();
+                String idScrimConfirmar = leerIdScrimValido();
                 scrimController.confirmar(idScrimConfirmar, jugador.getEmail());
             }
             case 5 -> actualizarPerfilJugador(jugador);
+            case 6 -> {
+                String idScrimFavorito = leerNoVacio("Ingrese ID del scrim a guardar como favorito: ");
+                try {
+                    scrimController.buscar(idScrimFavorito);
+                    boolean agregado = usuarioService.agregarScrimFavorita(jugador.getEmail(), idScrimFavorito);
+                    if (agregado) {
+                        usuarioActual.establecerUsuarioActual(usuarioService.buscar(jugador.getEmail()));
+                        System.out.println("Scrim " + idScrimFavorito + " añadida a tus favoritas.");
+                    } else {
+                        System.out.println("La scrim ya estaba en tu lista de favoritas.");
+                    }
+                } catch (Exception e) {
+                    System.out.println("No se pudo guardar como favorita: " + e.getMessage());
+                }
+            }
+            case 7 -> {
+                List<String> favoritas = usuarioService.obtenerScrimsFavoritas(jugador.getEmail());
+                if (favoritas.isEmpty()) {
+                    System.out.println("Aún no guardaste scrims favoritas.");
+                } else {
+                    System.out.println("\n=== SCRIMS FAVORITAS ===");
+                    for (String id : favoritas) {
+                        try {
+                            Scrim scrim = scrimController.buscar(id);
+                            System.out.println("* " + scrimController.formatearResumen(scrim));
+                        } catch (Exception e) {
+                            System.out.println("* " + id + " (scrim no encontrada)");
+                        }
+                    }
+                }
+            }
+            case 8 -> {
+                String juego = leerOpcional("Juego preferido (ENTER para cualquiera): ");
+                String region = seleccionarRegionOpcionalLibre();
+                Integer rangoMin = seleccionarRangoOpcional("Seleccione rango mínimo (0 = cualquiera): ", false);
+                Integer rangoMax = seleccionarRangoOpcional("Seleccione rango máximo (0 = cualquiera): ", true);
+                if (rangoMin != null && rangoMax != null && rangoMax < rangoMin) {
+                    int tmp = rangoMin;
+                    rangoMin = rangoMax;
+                    rangoMax = tmp;
+                }
+                Integer latenciaMax = leerEnteroOpcionalNulo("Latencia máxima permitida (ENTER para omitir): ");
+                String formato = seleccionarFormatoOpcional();
+                ScrimAlerta alerta = new ScrimAlerta(juego, region, rangoMin, rangoMax, latenciaMax, formato);
+                try {
+                    usuarioService.agregarAlertaScrim(jugador.getEmail(), alerta);
+                    usuarioActual.establecerUsuarioActual(usuarioService.buscar(jugador.getEmail()));
+                    System.out.println("Alerta configurada correctamente.");
+                } catch (Exception e) {
+                    System.out.println("No se pudo configurar la alerta: " + e.getMessage());
+                }
+            }
+            case 9 -> {
+                List<ScrimAlerta> alertas = usuarioService.obtenerAlertasScrim(jugador.getEmail());
+                if (alertas.isEmpty()) {
+                    System.out.println("No tenés alertas configuradas.");
+                } else {
+                    System.out.println("\n=== ALERTAS CONFIGURADAS ===");
+                    for (int i = 0; i < alertas.size(); i++) {
+                        ScrimAlerta alerta = alertas.get(i);
+                        System.out.println((i + 1) + ". Juego: " + valorOAny(alerta.getJuego()) +
+                                " | Región: " + valorOAny(alerta.getRegion()) +
+                                " | Formato: " + valorOAny(alerta.getFormato()) +
+                                " | Rango: " + rangoTexto(alerta.getRangoMin(), alerta.getRangoMax()) +
+                                " | Latencia máx: " + (alerta.getLatenciaMax() != null ? alerta.getLatenciaMax() + " ms" : "cualquiera"));
+                    }
+                }
+            }
             default -> System.out.println("Opción inválida.");
         }
         return false;
@@ -269,7 +408,11 @@ public class Main {
                 nuevoRol.getNombre(),
                 nuevaRegion.getNombre(),
                 new ArrayList<>(jugador.getSancionesActivasSinDepurar()),
-                new ArrayList<>(jugador.getSancionesHistoricas())
+                new ArrayList<>(jugador.getSancionesHistoricas()),
+                jugador.getStrikeCount(),
+                jugador.estaSuspendido(),
+                new ArrayList<>(jugador.getScrimsFavoritas()),
+                new ArrayList<>(jugador.getAlertasScrim())
         );
 
         usuarioService.actualizar(actualizado);
@@ -337,11 +480,6 @@ public class Main {
                 String fin = scanner.nextLine().trim();
                 scrimController.programar(idScrim, inicio, fin);
             }
-            case 6 -> {
-                System.out.print("ID del scrim: ");
-                String idScrim = scanner.nextLine().trim();
-                scrimController.limpiarAgenda(idScrim);
-            }
             case 7 -> {
                 System.out.print("ID del scrim: ");
                 String idScrim = scanner.nextLine().trim();
@@ -358,34 +496,92 @@ public class Main {
                 scrimController.cancelar(idScrim);
             }
             case 10 -> {
-                System.out.print("ID del scrim: ");
-                String idScrim = scanner.nextLine().trim();
-                System.out.print("Email del jugador: ");
-                String emailJugador = scanner.nextLine().trim();
-                System.out.print("Kills: ");
-                int kills = leerEntero();
-                System.out.print("Assists: ");
-                int assists = leerEntero();
-                System.out.print("Deaths: ");
-                int deaths = leerEntero();
-                System.out.print("Rating: ");
-                double rating = leerDouble();
-                scrimController.cargarResultado(idScrim, emailJugador, kills, assists, deaths, rating);
+                String idScrim = leerIdScrimValido();
+                Scrim scrim;
+                try {
+                    scrim = scrimController.buscar(idScrim);
+                } catch (Exception e) {
+                    System.out.println("No se pudo encontrar el scrim: " + e.getMessage());
+                    break;
+                }
+                List<String> jugadores = new ArrayList<>(scrim.getJugadores());
+                if (jugadores.isEmpty()) {
+                    System.out.println("El scrim no tiene jugadores registrados.");
+                    break;
+                }
+                boolean completado = false;
+                while (!completado) {
+                    List<RegistroResultado> resultados = new ArrayList<>();
+                    System.out.println("\nCargando resultados para el scrim " + scrim.getId() +
+                            " (" + scrim.getEstado().getNombre() + ").");
+                    for (String email : jugadores) {
+                        System.out.println("\nJugador: " + email);
+                        int kills = leerEnteroConMensaje("  Kills: ");
+                        int assists = leerEnteroConMensaje("  Assists: ");
+                        int deaths = leerEnteroConMensaje("  Deaths: ");
+                        double rating = leerDoubleConMensaje("  Rating: ");
+                        resultados.add(new RegistroResultado(email, kills, assists, deaths, rating));
+                    }
+
+                    System.out.println("\nResumen ingresado:");
+                    resultados.forEach(r -> System.out.println("  " + r.email() +
+                            " -> K:" + r.kills() + " / A:" + r.assists() + " / D:" + r.deaths() +
+                            " | Rating: " + r.rating()));
+
+                    System.out.println("\n¿Desea guardar estos resultados?");
+                    System.out.println("1. Guardar y salir");
+                    System.out.println("2. Volver a cargar");
+                    System.out.println("3. Cancelar sin guardar");
+                    int decision = leerEnteroConMensaje("Opción: ");
+                    if (decision == 1) {
+                        boolean exito = true;
+                        for (RegistroResultado r : resultados) {
+                            try {
+                                scrimController.cargarResultado(idScrim, r.email(), r.kills(), r.assists(), r.deaths(), r.rating());
+                            } catch (Exception ex) {
+                                System.out.println("Error al guardar resultados para " + r.email() + ": " + ex.getMessage());
+                                exito = false;
+                                break;
+                            }
+                        }
+                        if (exito) {
+                            System.out.println("Resultados guardados correctamente.");
+                            completado = true;
+                        } else {
+                            System.out.println("No se pudieron guardar todos los resultados. Intente nuevamente.");
+                        }
+                    } else if (decision == 2) {
+                        System.out.println("Reiniciando carga de resultados...");
+                    } else if (decision == 3) {
+                        System.out.println("Operación cancelada. No se guardaron resultados.");
+                        completado = true;
+                    } else {
+                        System.out.println("Opción inválida. Se volverá a pedir la confirmación.");
+                    }
+                }
             }
             case 11 -> {
-                System.out.print("ID del scrim: ");
-                String idScrim = scanner.nextLine().trim();
-                System.out.print("Email del jugador: ");
-                String emailJugador = scanner.nextLine().trim();
-                scrimController.agregarSuplente(idScrim, emailJugador);
+                String idScrim = leerIdScrimValido();
+                scrimController.mostrarSuplentes(idScrim);
             }
             case 12 -> {
                 String email = leerNoVacio("Email del jugador a sancionar: ");
                 String motivo = seleccionarMotivoSancion();
-                int minutos = leerEnteroConMensaje("Duración de la sanción en minutos: ");
+                String consecuencia = seleccionarConsecuenciaSancion();
                 try {
-                    usuarioService.agregarSancion(email, motivo, Duration.ofMinutes(minutos));
-                    System.out.println("Sanción registrada para " + email + " con motivo " + motivo);
+                    if ("Strike".equalsIgnoreCase(consecuencia)) {
+                        int strikes = usuarioService.aplicarStrike(email, motivo);
+                        if (strikes >= 3) {
+                            System.out.println("Se aplicó el tercer strike. La cuenta de " + email + " queda suspendida.");
+                        } else {
+                            String duracion = strikes == 1 ? "24 horas" : "1 semana";
+                            System.out.println("Strike #" + strikes + " aplicado a " + email + " (" + duracion + ").");
+                        }
+                    } else {
+                        int minutos = leerEnteroConMensaje("Duración del cooldown en minutos: ");
+                        usuarioService.aplicarCooldown(email, motivo, Duration.ofMinutes(minutos));
+                        System.out.println("Cooldown aplicado a " + email + " por " + minutos + " minutos.");
+                    }
                 } catch (Exception e) {
                     System.out.println("Error al registrar sanción: " + e.getMessage());
                 }
@@ -493,6 +689,23 @@ public class Main {
         return leerEntero();
     }
 
+    private static double leerDoubleConMensaje(String mensaje) {
+        System.out.print(mensaje);
+        return leerDouble();
+    }
+
+    private static boolean equipoLleno(Scrim scrim, String nombreEquipo) {
+        if ("Equipo 1".equalsIgnoreCase(nombreEquipo)) {
+            return scrim.getEquipo1().getCantidadJugadores() >= scrim.getCupo();
+        }
+        if ("Equipo 2".equalsIgnoreCase(nombreEquipo)) {
+            return scrim.getEquipo2().getCantidadJugadores() >= scrim.getCupo();
+        }
+        return true;
+    }
+
+    private record RegistroResultado(String email, int kills, int assists, int deaths, double rating) {}
+
     private static int leerEnteroOpcional(String mensaje, int valorActual) {
         while (true) {
             System.out.print(mensaje + " (actual " + valorActual + "): ");
@@ -509,82 +722,44 @@ public class Main {
     }
 
     private static StateRoles pedirRol() {
-        while (true) {
-            System.out.println("Roles disponibles:");
-            for (StateRoles rol : StateRoles.disponibles()) {
-                System.out.println("- " + rol.getNombre());
-            }
-            String rolStr = leerNoVacio("Rol preferido: ");
-            StateRoles rol = StateRoles.fromNombre(rolStr);
-            if (rol != null) {
-                return rol;
-            }
-            System.out.println("Rol inválido. Intente nuevamente.");
-        }
+        return seleccionarRolDesdeMenu(null);
     }
 
     private static StateRoles pedirRolOpcional(StateRoles actual) {
-        StateRoles actualNoNulo = actual != null ? actual : StateRoles.disponibles().get(0);
+        return seleccionarRolDesdeMenu(actual);
+    }
+
+    private static StateRoles seleccionarRolDesdeMenu(StateRoles actual) {
+        List<StateRoles> roles = StateRoles.disponibles();
+        StateRoles actualNoNulo = actual != null ? actual : roles.get(0);
         while (true) {
-            System.out.println("Roles disponibles (actual: " + actualNoNulo.getNombre() + "):");
-            for (StateRoles rol : StateRoles.disponibles()) {
-                System.out.println("- " + rol.getNombre());
+            System.out.println("Roles disponibles" + (actual != null ? " (actual: " + actualNoNulo.getNombre() + ")" : "") + ":");
+            for (int i = 0; i < roles.size(); i++) {
+                System.out.println((i + 1) + ". " + roles.get(i).getNombre());
             }
-            System.out.print("Rol preferido (ENTER para mantener): ");
-            String input = scanner.nextLine().trim();
-            if (input.isBlank()) {
-                return actualNoNulo;
-            }
-            StateRoles rol = StateRoles.fromNombre(input);
-            if (rol != null) {
-                return rol;
+            if (actual != null) {
+                System.out.print("Seleccione un rol (ENTER para mantener): ");
+                String input = scanner.nextLine().trim();
+                if (input.isBlank()) {
+                    return actualNoNulo;
+                }
+                try {
+                    int opcion = Integer.parseInt(input);
+                    if (opcion >= 1 && opcion <= roles.size()) {
+                        return roles.get(opcion - 1);
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            } else {
+                int opcion = leerEnteroConMensaje("Seleccione un rol: ");
+                if (opcion >= 1 && opcion <= roles.size()) {
+                    return roles.get(opcion - 1);
+                }
             }
             System.out.println("Rol inválido. Intente nuevamente.");
         }
     }
 
-    private static StateRegion pedirRegion() {
-        while (true) {
-            System.out.println("Regiones disponibles:");
-            var disponibles = StateRegion.disponibles();
-            for (int i = 0; i < disponibles.size(); i++) {
-                System.out.println((i + 1) + ". " + disponibles.get(i).getNombre());
-            }
-            int opcion = leerEnteroConMensaje("Seleccione una región: ");
-            if (opcion >= 1 && opcion <= disponibles.size()) {
-                return disponibles.get(opcion - 1);
-            }
-            System.out.println("Opción inválida. Intente nuevamente.");
-        }
-    }
-
-    private static StateRegion pedirRegionOpcional(StateRegion actual) {
-        StateRegion actualNoNulo = actual != null ? actual : StateRegion.disponibles().get(0);
-        while (true) {
-            var disponibles = StateRegion.disponibles();
-            System.out.println("Regiones disponibles (actual: " + actualNoNulo.getNombre() + "):");
-            for (int i = 0; i < disponibles.size(); i++) {
-                System.out.println((i + 1) + ". " + disponibles.get(i).getNombre());
-            }
-            System.out.print("Seleccione una región (ENTER para mantener): ");
-            String input = scanner.nextLine().trim();
-            if (input.isBlank()) {
-                return actualNoNulo;
-            }
-            StateRegion region = StateRegion.fromNombre(input);
-            if (region != null) {
-                return region;
-            }
-            try {
-                int opcion = Integer.parseInt(input);
-                if (opcion >= 1 && opcion <= disponibles.size()) {
-                    return disponibles.get(opcion - 1);
-                }
-            } catch (NumberFormatException ignored) {
-            }
-            System.out.println("Región inválida. Intente nuevamente.");
-        }
-    }
 
     private static StateRangos pedirRango(String etiqueta) {
         while (true) {
@@ -647,7 +822,7 @@ public class Main {
     }
 
     private static String seleccionarMotivoSancion() {
-        String[] motivos = {"Abandono", "NoShow", "Strike", "Cooldown"};
+        String[] motivos = {"Abandono", "NoShow"};
         System.out.println("Motivos disponibles:");
         for (int i = 0; i < motivos.length; i++) {
             System.out.println((i + 1) + ". " + motivos[i]);
@@ -656,6 +831,21 @@ public class Main {
             int opcion = leerEnteroConMensaje("Seleccione un motivo (1-" + motivos.length + "): ");
             if (opcion >= 1 && opcion <= motivos.length) {
                 return motivos[opcion - 1];
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static String seleccionarConsecuenciaSancion() {
+        String[] consecuencias = {"Strike", "Cooldown"};
+        System.out.println("Consecuencias disponibles:");
+        for (int i = 0; i < consecuencias.length; i++) {
+            System.out.println((i + 1) + ". " + consecuencias[i]);
+        }
+        while (true) {
+            int opcion = leerEnteroConMensaje("Seleccione una consecuencia (1-" + consecuencias.length + "): ");
+            if (opcion >= 1 && opcion <= consecuencias.length) {
+                return consecuencias[opcion - 1];
             }
             System.out.println("Opción inválida. Intente nuevamente.");
         }
@@ -703,5 +893,179 @@ public class Main {
             System.out.println("Opción inválida. Intente nuevamente.");
         }
     }
-}
 
+    private static Integer leerEnteroOpcionalNulo(String mensaje) {
+        System.out.print(mensaje);
+        String input = scanner.nextLine().trim();
+        if (input.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            System.out.println("Valor inválido. Se ignorará este campo.");
+            return null;
+        }
+    }
+
+    private static String leerOpcional(String mensaje) {
+        System.out.print(mensaje);
+        String value = scanner.nextLine().trim();
+        return value.isBlank() ? null : value;
+    }
+
+    private static String seleccionarEquipoNumerico() {
+        while (true) {
+            System.out.println("Seleccione equipo:");
+            System.out.println("1. Equipo 1");
+            System.out.println("2. Equipo 2");
+            int opcion = leerEnteroConMensaje("Opción: ");
+            if (opcion == 1) {
+                return "Equipo 1";
+            }
+            if (opcion == 2) {
+                return "Equipo 2";
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static String leerIdScrimValido() {
+        return leerIdScrimValido(true);
+    }
+
+    private static String leerIdScrimValido(boolean requerido) {
+        while (true) {
+            System.out.print("Ingrese ID del scrim: ");
+            String idScrim = scanner.nextLine().trim();
+            if (idScrim.isBlank()) {
+                if (requerido) {
+                    System.out.println("El ID no puede ser vacío.");
+                    continue;
+                }
+                return null;
+            }
+            try {
+                scrimController.buscar(idScrim);
+                return idScrim;
+            } catch (Exception e) {
+                System.out.println("Scrim no encontrado. Intente nuevamente.");
+            }
+        }
+    }
+
+    private static String seleccionarRegionOpcionalLibre() {
+        var disponibles = StateRegion.disponibles();
+        System.out.println("Regiones disponibles:");
+        for (int i = 0; i < disponibles.size(); i++) {
+            System.out.println((i + 1) + ". " + disponibles.get(i).getNombre());
+        }
+        System.out.println("0. Cualquiera");
+        while (true) {
+            int opcion = leerEnteroConMensaje("Seleccione una región: ");
+            if (opcion == 0) {
+                return null;
+            }
+            if (opcion >= 1 && opcion <= disponibles.size()) {
+                return disponibles.get(opcion - 1).getNombre();
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static Integer seleccionarRangoOpcional(String mensaje, boolean devolverMaximo) {
+        var rangos = StateRangos.disponibles();
+        System.out.println("Rangos disponibles:");
+        for (int i = 0; i < rangos.size(); i++) {
+            StateRangos rango = rangos.get(i);
+            System.out.println((i + 1) + ". " + rango.getNombre() + " (" + rango.getMinimo() + " - " + rango.getMaximo() + ")");
+        }
+        System.out.println("0. Cualquiera");
+        while (true) {
+            int opcion = leerEnteroConMensaje(mensaje);
+            if (opcion == 0) {
+                return null;
+            }
+            if (opcion >= 1 && opcion <= rangos.size()) {
+                StateRangos rango = rangos.get(opcion - 1);
+                return devolverMaximo ? rango.getMaximo() : rango.getMinimo();
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static String seleccionarFormatoOpcional() {
+        String[] formatos = {"5v5", "3v3", "1v1"};
+        System.out.println("Formatos disponibles:");
+        for (int i = 0; i < formatos.length; i++) {
+            System.out.println((i + 1) + ". " + formatos[i]);
+        }
+        System.out.println("0. Cualquiera");
+        while (true) {
+            int opcion = leerEnteroConMensaje("Seleccione un formato: ");
+            if (opcion == 0) {
+                return null;
+            }
+            if (opcion >= 1 && opcion <= formatos.length) {
+                return formatos[opcion - 1];
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static StateRegion seleccionarRegionDesdeMenu(StateRegion actual) {
+        var disponibles = StateRegion.disponibles();
+        StateRegion actualNoNulo = actual != null ? actual : disponibles.get(0);
+        while (true) {
+            System.out.println("Regiones disponibles" + (actual != null ? " (actual: " + actualNoNulo.getNombre() + ")" : "") + ":");
+            for (int i = 0; i < disponibles.size(); i++) {
+                System.out.println((i + 1) + ". " + disponibles.get(i).getNombre());
+            }
+            if (actual != null) {
+                System.out.print("Seleccione una región (ENTER para mantener): ");
+                String input = scanner.nextLine().trim();
+                if (input.isBlank()) {
+                    return actualNoNulo;
+                }
+                try {
+                    int opcion = Integer.parseInt(input);
+                    if (opcion >= 1 && opcion <= disponibles.size()) {
+                        return disponibles.get(opcion - 1);
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            } else {
+                int opcion = leerEnteroConMensaje("Seleccione una región: ");
+                if (opcion >= 1 && opcion <= disponibles.size()) {
+                    return disponibles.get(opcion - 1);
+                }
+            }
+            System.out.println("Región inválida. Intente nuevamente.");
+        }
+    }
+
+    private static StateRegion pedirRegion() {
+        return seleccionarRegionDesdeMenu(null);
+    }
+
+    private static StateRegion pedirRegionOpcional(StateRegion actual) {
+        return seleccionarRegionDesdeMenu(actual);
+    }
+
+    private static String valorOAny(String valor) {
+        return valor == null || valor.isBlank() ? "cualquiera" : valor;
+    }
+
+    private static String rangoTexto(Integer min, Integer max) {
+        if (min == null && max == null) {
+            return "cualquiera";
+        }
+        if (min == null) {
+            return "<= " + max;
+        }
+        if (max == null) {
+            return ">= " + min;
+        }
+        return min + " - " + max;
+    }
+}

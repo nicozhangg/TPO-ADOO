@@ -3,6 +3,7 @@ package ar.edu.tpo.controller;
 import ar.edu.tpo.domain.Jugador;
 import ar.edu.tpo.domain.Organizador;
 import ar.edu.tpo.domain.Usuario;
+import ar.edu.tpo.domain.Scrim;
 import ar.edu.tpo.service.ArgentinaTimeZone;
 import ar.edu.tpo.service.UsuarioActualPort;
 import ar.edu.tpo.service.scrim.ScrimCicloDeVidaService;
@@ -76,7 +77,7 @@ public class ScrimController {
     // ================== LISTAR ==================
     public void listar(){ 
         // Permitido para todos los tipos de usuarios
-        lifecycleService.listarScrims().forEach(System.out::println);
+        lifecycleService.listarScrims().forEach(scrim -> System.out.println(formatearResumen(scrim)));
     }
 
     // ================== LOBBY ===================
@@ -178,9 +179,37 @@ public class ScrimController {
         statsService.cargarResultado(idScrim, emailJugador, kills, assists, deaths, rating);
         System.out.println("Resultado cargado.");
     }
-    public void agregarSuplente(String idScrim, String emailJugador){
+    public Scrim buscar(String idScrim) {
+        return lifecycleService.buscar(idScrim);
+    }
+
+    public void mostrarSuplentes(String idScrim) {
         validarPermisoOrganizer();
-        lobbyService.agregarSuplente(idScrim, emailJugador);
-        System.out.println("Suplente agregado.");
+        Scrim scrim = lifecycleService.buscar(idScrim);
+        var suplentes = scrim.getListaEspera();
+        if (suplentes.isEmpty()) {
+            System.out.println("No hay suplentes registrados para este scrim.");
+            return;
+        }
+        System.out.println("\n=== LISTA DE SUPLENTES (" + scrim.getId() + ") ===");
+        suplentes.forEach(entry -> System.out.println(
+                "%d. %s (desde %s)".formatted(
+                        entry.orden(),
+                        entry.emailJugador(),
+                        entry.fechaSolicitud()
+                )));
+    }
+
+    public String formatearResumen(Scrim scrim) {
+        return "%s | %s | %s | %s | Rango %d-%d | Latencia máx %d ms"
+                .formatted(
+                        scrim.getId(),
+                        scrim.getJuego(),
+                        scrim.getRegion(),
+                        scrim.getFormato(),
+                        scrim.getRangoMin(),
+                        scrim.getRangoMax(),
+                        scrim.getLatenciaMaxMs()
+                );
     }
 }

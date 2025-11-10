@@ -3,6 +3,7 @@ package ar.edu.tpo.service.scrim;
 import ar.edu.tpo.domain.Estadistica;
 import ar.edu.tpo.domain.KDA;
 import ar.edu.tpo.domain.Scrim;
+import ar.edu.tpo.domain.estado.FinalizadoState;
 import ar.edu.tpo.repository.ScrimRepository;
 import ar.edu.tpo.service.UsuarioService;
 
@@ -26,6 +27,9 @@ public class ScrimStatsService {
                                 int kills, int assists, int deaths, double rating) {
         usuarios.buscar(emailJugador);
         Scrim scrim = repo.buscarPorId(idScrim);
+        if (scrim.getEstado() != FinalizadoState.INSTANCIA) {
+            throw new IllegalStateException("Solo se pueden cargar resultados cuando el scrim está en estado FINALIZADO.");
+        }
         KDA kda = new KDA(kills, assists, deaths);
         Estadistica estadistica = new Estadistica(emailJugador, kda, rating, LocalDateTime.now());
         scrim.registrarEstadistica(estadistica);

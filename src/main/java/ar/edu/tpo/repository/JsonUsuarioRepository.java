@@ -5,6 +5,7 @@ import ar.edu.tpo.domain.Organizador;
 import ar.edu.tpo.domain.SancionActiva;
 import ar.edu.tpo.domain.Usuario;
 import ar.edu.tpo.domain.SancionHistorica;
+import ar.edu.tpo.domain.alerta.ScrimAlerta;
 import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.regiones.StateRegion;
 import ar.edu.tpo.domain.roles.StateRoles;
@@ -118,6 +119,36 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                 if (!sancionesHistoricas.isEmpty()) {
                     data.add("sancionesHistoricas", sancionesHistoricas);
                 }
+                JsonArray favoritas = new JsonArray();
+                usuario.getScrimsFavoritas().forEach(favoritas::add);
+                data.add("scrimsFavoritas", favoritas);
+
+                JsonArray alertas = new JsonArray();
+                usuario.getAlertasScrim().forEach(alerta -> {
+                    JsonObject alertaJson = new JsonObject();
+                    if (alerta.getJuego() != null && !alerta.getJuego().isBlank()) {
+                        alertaJson.addProperty("juego", alerta.getJuego());
+                    }
+                    if (alerta.getRegion() != null && !alerta.getRegion().isBlank()) {
+                        alertaJson.addProperty("region", alerta.getRegion());
+                    }
+                    if (alerta.getRangoMin() != null) {
+                        alertaJson.addProperty("rangoMin", alerta.getRangoMin());
+                    }
+                    if (alerta.getRangoMax() != null) {
+                        alertaJson.addProperty("rangoMax", alerta.getRangoMax());
+                    }
+                    if (alerta.getLatenciaMax() != null) {
+                        alertaJson.addProperty("latenciaMax", alerta.getLatenciaMax());
+                    }
+                    if (alerta.getFormato() != null && !alerta.getFormato().isBlank()) {
+                        alertaJson.addProperty("formato", alerta.getFormato());
+                    }
+                    alertas.add(alertaJson);
+                });
+                data.add("alertasScrim", alertas);
+                data.addProperty("strikeCount", usuario.getStrikeCount());
+                data.addProperty("suspendido", usuario.estaSuspendido());
                 root.add(usuario.getEmail(), data);
             }
 
@@ -178,6 +209,11 @@ public class JsonUsuarioRepository implements UsuarioRepository {
         Usuario usuario;
         List<SancionActiva> sanciones = leerSanciones(data);
         List<SancionHistorica> sancionesHistoricas = leerSancionesHistoricas(data);
+        List<String> favoritas = leerScrimsFavoritas(data);
+        List<ScrimAlerta> alertas = leerAlertasScrim(data);
+
+        int strikes = intOrDefault(data, "strikeCount", 0);
+        boolean suspendido = data.has("suspendido") && !data.get("suspendido").isJsonNull() && data.get("suspendido").getAsBoolean();
 
         if (TIPO_JUGADOR.equalsIgnoreCase(tipo)) {
             String rango = stringOrNull(data, "rango");
@@ -194,9 +230,9 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                 region = StateRegion.disponibles().get(0).getNombre();
             }
 
-            usuario = new Jugador(id, email, password, mmr, latencia, rango, rolPreferido, region, sanciones, sancionesHistoricas);
+            usuario = new Jugador(id, email, password, mmr, latencia, rango, rolPreferido, region, sanciones, sancionesHistoricas, strikes, suspendido, favoritas, alertas);
         } else {
-            usuario = new Organizador(id, email, password, sanciones, sancionesHistoricas);
+            usuario = new Organizador(id, email, password, sanciones, sancionesHistoricas, strikes, suspendido);
         }
 
         if (id == null || id.isBlank()) {
@@ -282,5 +318,40 @@ public class JsonUsuarioRepository implements UsuarioRepository {
             }
         }
         return sanciones;
+    }
+
+    private List<String> leerScrimsFavoritas(JsonObject data) {
+        List<String> favoritas = new ArrayList<>();
+        if (data.has("scrimsFavoritas") && data.get("scrimsFavoritas").isJsonArray()) {
+            for (JsonElement element : data.getAsJsonArray("scrimsFavoritas")) {
+                if (element != null && element.isJsonPrimitive()) {
+                    favoritas.add(element.getAsString());
+                }
+            }
+        }
+        return favoritas;
+    }
+
+    private List<ScrimAlerta> leerAlertasScrim(JsonObject data) {
+        List<ScrimAlerta> alertas = new ArrayList<>();
+        if (data.has("alertasScrim") && data.get("alertasScrim").isJsonArray()) {
+            for (JsonElement element : data.getAsJsonArray("alertasScrim")) {
+                if (element == null || element.isJsonNull() || !element.isJsonObject()) {
+                    continue;
+                }
+                JsonObject alertaJson = element.getAsJsonObject();
+                String juego = stringOrNull(alertaJson, "juego");
+                String region = stringOrNull(alertaJson, "region");
+                Integer rangoMin = alertaJson.has("rangoMin") && !alertaJson.get("rangoMin").isJsonNull()
+                        ? alertaJson.get("rangoMin").getAsInt() : null;
+                Integer rangoMax = alertaJson.has("rangoMax") && !alertaJson.get("rangoMax").isJsonNull()
+                        ? alertaJson.get("rangoMax").getAsInt() : null;
+                Integer latenciaMax = alertaJson.has("latenciaMax") && !alertaJson.get("latenciaMax").isJsonNull()
+                        ? alertaJson.get("latenciaMax").getAsInt() : null;
+                String formato = stringOrNull(alertaJson, "formato");
+                alertas.add(new ScrimAlerta(juego, region, rangoMin, rangoMax, latenciaMax, formato));
+            }
+        }
+        return alertas;
     }
 }

@@ -36,30 +36,36 @@ public class ScrimLobbyService {
         var usuario = usuarios.buscar(emailJugador);
         Scrim scrim = repo.buscarPorId(idScrim);
         validarPuedeUnirse(usuario, scrim);
+        if (!scrim.hayCupoDisponible()) {
+            registrarSuplente(scrim, emailJugador);
+            return;
+        }
+
+        scrim.quitarDeListaEspera(emailJugador);
         scrim.agregarJugador(emailJugador);
         repo.guardar(scrim);
         System.out.println("[evento] JugadorUnido scrim=" + idScrim + " jugador=" + emailJugador);
-        if (notificaciones != null) {
-            notificaciones.notificarUnionScrim(scrim, emailJugador);
-            if (scrim.getEstado() == LobbyArmadoState.INSTANCIA || scrim.getEstado() == ConfirmadoState.INSTANCIA) {
-                notificaciones.notificarScrimEstado(scrim, scrim.getEstado().getNombre());
-            }
-        }
+        notificarUnion(scrim, emailJugador);
     }
 
     public void unirseAEquipo(String idScrim, String emailJugador, String nombreEquipo) {
         var usuario = usuarios.buscar(emailJugador);
         Scrim scrim = repo.buscarPorId(idScrim);
         validarPuedeUnirse(usuario, scrim);
+        if (!scrim.hayLugarEnEquipo(nombreEquipo)) {
+            if (scrim.hayCupoDisponible()) {
+                System.out.println("El equipo seleccionado ya está completo. Probá con el otro equipo.");
+                return;
+            }
+            registrarSuplente(scrim, emailJugador);
+            return;
+        }
+
+        scrim.quitarDeListaEspera(emailJugador);
         scrim.agregarJugador(emailJugador, nombreEquipo);
         repo.guardar(scrim);
         System.out.println("[evento] JugadorUnido scrim=" + idScrim + " jugador=" + emailJugador + " equipo=" + nombreEquipo);
-        if (notificaciones != null) {
-            notificaciones.notificarUnionScrim(scrim, emailJugador);
-            if (scrim.getEstado() == LobbyArmadoState.INSTANCIA || scrim.getEstado() == ConfirmadoState.INSTANCIA) {
-                notificaciones.notificarScrimEstado(scrim, scrim.getEstado().getNombre());
-            }
-        }
+        notificarUnion(scrim, emailJugador);
     }
 
     public void salir(String idScrim, String emailJugador) {
@@ -87,15 +93,17 @@ public class ScrimLobbyService {
         scrim.quitarJugador(emailJugador);
         repo.guardar(scrim);
         System.out.println("[evento] JugadorQuitado scrim=" + idScrim + " jugador=" + emailJugador);
+        notificarCupoLiberado(scrim);
     }
 
     public void confirmarJugador(String idScrim, String emailJugador) {
         usuarios.buscar(emailJugador);
         Scrim scrim = repo.buscarPorId(idScrim);
         scrim.confirmarJugador(emailJugador);
+        boolean todosConfirmados = scrim.ambosEquiposConfirmados();
         repo.guardar(scrim);
         System.out.println("[evento] EquipoConfirmado scrim=" + idScrim + " jugador=" + emailJugador);
-        if (notificaciones != null && scrim.getEstado() == ConfirmadoState.INSTANCIA) {
+        if (notificaciones != null && todosConfirmados && scrim.getEstado() == ConfirmadoState.INSTANCIA) {
             notificaciones.notificarScrimEstado(scrim, scrim.getEstado().getNombre());
         }
     }
@@ -103,19 +111,12 @@ public class ScrimLobbyService {
     public void confirmarEquipo(String idScrim, String nombreEquipo) {
         Scrim scrim = repo.buscarPorId(idScrim);
         scrim.confirmarEquipo(nombreEquipo);
+        boolean todosConfirmados = scrim.ambosEquiposConfirmados();
         repo.guardar(scrim);
         System.out.println("[evento] EquipoConfirmado scrim=" + idScrim + " equipo=" + nombreEquipo);
-        if (notificaciones != null && scrim.getEstado() == ConfirmadoState.INSTANCIA) {
+        if (notificaciones != null && todosConfirmados && scrim.getEstado() == ConfirmadoState.INSTANCIA) {
             notificaciones.notificarScrimEstado(scrim, scrim.getEstado().getNombre());
         }
-    }
-
-    public void agregarSuplente(String idScrim, String emailJugador) {
-        usuarios.buscar(emailJugador);
-        Scrim scrim = repo.buscarPorId(idScrim);
-        scrim.agregarAListaEspera(emailJugador);
-        repo.guardar(scrim);
-        System.out.println("[evento] SuplenteAgregado scrim=" + idScrim + " jugador=" + emailJugador);
     }
 
     private void validarPuedeUnirse(Usuario usuario, Scrim scrim) {
@@ -130,6 +131,13 @@ public class ScrimLobbyService {
 
         if (!(usuario instanceof Jugador jugador)) {
             throw new SecurityException("Solo los jugadores pueden unirse a scrims");
+        }
+
+        if (scrim.getEquipo1().contieneJugador(jugador.getEmail()) || scrim.getEquipo2().contieneJugador(jugador.getEmail())) {
+            String equipoActual = scrim.getEquipo1().contieneJugador(jugador.getEmail())
+                    ? scrim.getEquipo1().getNombre()
+                    : scrim.getEquipo2().getNombre();
+            throw new IllegalStateException("Ya formas parte de esta scrim en " + equipoActual + ".");
         }
 
         if (jugador.getLatenciaMs() > scrim.getLatenciaMaxMs()) {
@@ -153,6 +161,35 @@ public class ScrimLobbyService {
                 .map(StateRangos::getNombre)
                 .findFirst()
                 .orElse(puntos + " MMR");
+    }
+
+    private void registrarSuplente(Scrim scrim, String emailJugador) {
+        boolean agregado = scrim.agregarAListaEspera(emailJugador);
+        repo.guardar(scrim);
+        if (agregado) {
+            System.out.println("[evento] SuplenteAgregado scrim=" + scrim.getId() + " jugador=" + emailJugador);
+            if (notificaciones != null) {
+                notificaciones.notificarIngresoListaEspera(scrim, emailJugador);
+            }
+        } else {
+            System.out.println("[evento] SuplenteExistente scrim=" + scrim.getId() + " jugador=" + emailJugador);
+        }
+        System.out.println("El cupo está completo. Quedaste en la lista de suplentes. Te avisaremos si se libera un lugar.");
+    }
+
+    private void notificarUnion(Scrim scrim, String emailJugador) {
+        if (notificaciones != null) {
+            notificaciones.notificarUnionScrim(scrim, emailJugador);
+            if (scrim.getEstado() == LobbyArmadoState.INSTANCIA || scrim.getEstado() == ConfirmadoState.INSTANCIA) {
+                notificaciones.notificarScrimEstado(scrim, scrim.getEstado().getNombre());
+            }
+        }
+    }
+
+    private void notificarCupoLiberado(Scrim scrim) {
+        if (notificaciones != null && !scrim.getListaEspera().isEmpty()) {
+            notificaciones.notificarCupoDisponible(scrim);
+        }
     }
 }
 

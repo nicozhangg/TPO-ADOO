@@ -1,6 +1,8 @@
 package ar.edu.tpo.service.scrim;
 
+import ar.edu.tpo.domain.Jugador;
 import ar.edu.tpo.domain.Scrim;
+import ar.edu.tpo.domain.Usuario;
 import ar.edu.tpo.notification.NotificationService;
 import ar.edu.tpo.repository.ScrimRepository;
 import ar.edu.tpo.service.UsuarioService;
@@ -57,6 +59,7 @@ public class ScrimCicloDeVidaService {
 
         repo.guardar(scrim);
         System.out.println("[evento] ScrimCreado " + scrim.getId() + " (formato=" + formato + ", región=" + region + ", modalidad=" + modalidad + ")");
+        notificarCoincidencias(scrim);
         return scrim;
     }
 
@@ -121,6 +124,63 @@ public class ScrimCicloDeVidaService {
         if (notificaciones != null) {
             notificaciones.notificarScrimEstado(scrim, "CANCELADO");
         }
+    }
+
+    private void notificarCoincidencias(Scrim scrim) {
+        if (notificaciones == null) {
+            return;
+        }
+        for (Usuario usuario : usuarios.listar()) {
+            if (!(usuario instanceof Jugador jugador)) {
+                continue;
+            }
+            if (jugador.getAlertasScrim().isEmpty()) {
+                continue;
+            }
+            if (jugador.getLatenciaMs() > scrim.getLatenciaMaxMs()) {
+                continue;
+            }
+            if (!jugador.getRegionNombre().equalsIgnoreCase(scrim.getRegion())) {
+                continue;
+            }
+            int mmrJugador = jugador.getMmr();
+            if (mmrJugador < scrim.getRangoMin() || mmrJugador > scrim.getRangoMax()) {
+                continue;
+            }
+
+            boolean coincide = jugador.getAlertasScrim().stream().anyMatch(alerta -> coincideCon(scrim, jugador, alerta));
+            if (coincide) {
+                notificaciones.notificarScrimRecomendada(scrim, jugador);
+            }
+        }
+    }
+
+    private boolean coincideCon(Scrim scrim, Jugador jugador, ar.edu.tpo.domain.alerta.ScrimAlerta alerta) {
+        if (alerta.getJuego() != null && !alerta.getJuego().isBlank()
+                && !scrim.getJuego().equalsIgnoreCase(alerta.getJuego())) {
+            return false;
+        }
+        if (alerta.getRegion() != null && !alerta.getRegion().isBlank()
+                && !scrim.getRegion().equalsIgnoreCase(alerta.getRegion())) {
+            return false;
+        }
+        if (alerta.getFormato() != null && !alerta.getFormato().isBlank()
+                && !scrim.getFormato().equalsIgnoreCase(alerta.getFormato())) {
+            return false;
+        }
+        if (alerta.getRangoMin() != null && scrim.getRangoMax() < alerta.getRangoMin()) {
+            return false;
+        }
+        if (alerta.getRangoMax() != null && scrim.getRangoMin() > alerta.getRangoMax()) {
+            return false;
+        }
+        if (alerta.getLatenciaMax() != null && scrim.getLatenciaMaxMs() > alerta.getLatenciaMax()) {
+            return false;
+        }
+        // Validación final: el jugador realmente puede participar
+        return jugador.getLatenciaMs() <= scrim.getLatenciaMaxMs()
+                && jugador.getMmr() >= scrim.getRangoMin()
+                && jugador.getMmr() <= scrim.getRangoMax();
     }
 }
 

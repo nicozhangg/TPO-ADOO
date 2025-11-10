@@ -4,7 +4,11 @@
     "id": "ORG-1",
     "email": "a@a.com",
     "passwordHash": "admin123",
-    "sancionesActivas": []
+    "sancionesActivas": [],
+    "scrimsFavoritas": [],
+    "alertasScrim": [],
+    "strikeCount": 0,
+    "suspendido": false
   },
   "b@b.com": {
     "tipo": "Jugador",
@@ -23,7 +27,11 @@
         "expiraEn": "2025-11-09T15:37:14.540544400",
         "levantadaEn": "2025-11-09T15:32:35.193987"
       }
-    ]
+    ],
+    "scrimsFavoritas": [],
+    "alertasScrim": [],
+    "strikeCount": 0,
+    "suspendido": false
   },
   "c@c.com": {
     "tipo": "Jugador",
@@ -35,7 +43,19 @@
     "rango": "Bronce",
     "rolPreferido": "Iniciador",
     "region": "America",
-    "sancionesActivas": []
+    "sancionesActivas": [
+      {
+        "motivo": "Strike 1 (NoShow)",
+        "expiraEn": "2025-11-10T19:25:37.839428900"
+      },
+      {
+        "motivo": "Suspensión de cuenta (Abandono)"
+      }
+    ],
+    "scrimsFavoritas": [],
+    "alertasScrim": [],
+    "strikeCount": 3,
+    "suspendido": true
   },
   "d@d.com": {
     "tipo": "Jugador",
@@ -47,7 +67,11 @@
     "rango": "Bronce",
     "rolPreferido": "Controlador",
     "region": "America",
-    "sancionesActivas": []
+    "sancionesActivas": [],
+    "scrimsFavoritas": [],
+    "alertasScrim": [],
+    "strikeCount": 0,
+    "suspendido": false
   },
   "e@e.com": {
     "tipo": "Jugador",
@@ -59,7 +83,11 @@
     "rango": "Platino",
     "rolPreferido": "Duelista",
     "region": "America",
-    "sancionesActivas": []
+    "sancionesActivas": [],
+    "scrimsFavoritas": [],
+    "alertasScrim": [],
+    "strikeCount": 0,
+    "suspendido": false
   },
   "lp366841@gmail.com": {
     "tipo": "Jugador",
@@ -69,8 +97,22 @@
     "mmr": 800,
     "latenciaMs": 5,
     "rango": "Plata",
-    "rolPreferido": "Duelista",
+    "rolPreferido": "Iniciador",
     "region": "America",
-    "sancionesActivas": []
+    "sancionesActivas": [],
+    "scrimsFavoritas": [
+      "7f2b1c6d-2f61-4f2b-9bc9-3c0de51a0f7a"
+    ],
+    "alertasScrim": [
+      {
+        "region": "America",
+        "rangoMin": 0,
+        "rangoMax": 1800,
+        "latenciaMax": 50,
+        "formato": "3v3"
+      }
+    ],
+    "strikeCount": 0,
+    "suspendido": false
   }
 }

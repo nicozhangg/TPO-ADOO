@@ -3,6 +3,7 @@ package ar.edu.tpo.notification;
 import ar.edu.tpo.domain.SancionActiva;
 import ar.edu.tpo.domain.SancionHistorica;
 import ar.edu.tpo.domain.Scrim;
+import ar.edu.tpo.domain.WaitlistEntry;
 import ar.edu.tpo.domain.Usuario;
 import ar.edu.tpo.service.ArgentinaTimeZone;
 
@@ -41,6 +42,46 @@ public class NotificationService {
                 Si tienes agenda asignada, revísala para no perderte el inicio.
                 """.formatted(emailJugador, scrim.getId(), scrim.getJuego(), scrim.getCupo(), scrim.getLatenciaMaxMs());
         enviar(emailJugador, "Unión a scrim " + scrim.getJuego(), mensaje);
+    }
+
+    public void notificarIngresoListaEspera(Scrim scrim, String emailJugador) {
+        int orden = scrim.getListaEspera().stream()
+                .filter(entry -> entry.emailJugador().equalsIgnoreCase(emailJugador))
+                .map(WaitlistEntry::orden)
+                .findFirst()
+                .orElse(-1);
+        String ordenTexto = orden > 0 ? (" con orden #" + orden) : "";
+        String mensaje = """
+                Hola %s,
+
+                El scrim %s (%s) está completo por ahora. Te agregamos a la lista de suplentes%s.
+
+                Te avisaremos apenas se libere un lugar para que puedas ingresar.
+                """.formatted(
+                emailJugador,
+                scrim.getId(),
+                scrim.getJuego(),
+                ordenTexto
+        );
+        enviar(emailJugador, "Quedaste en la lista de suplentes", mensaje);
+    }
+
+    public void notificarCupoDisponible(Scrim scrim) {
+        if (scrim.getListaEspera().isEmpty()) {
+            return;
+        }
+        String mensaje = """
+                Se liberó un cupo en el scrim %s (%s).
+
+                Ingresá lo antes posible para asegurar tu lugar.
+                """.formatted(
+                scrim.getId(),
+                scrim.getJuego()
+        );
+        scrim.getListaEspera().stream()
+                .map(WaitlistEntry::emailJugador)
+                .filter(email -> email != null && !email.isBlank())
+                .forEach(email -> enviar(email, "Hay un lugar disponible en el scrim", mensaje));
     }
 
     public void notificarSancionAplicada(Usuario usuario, SancionActiva sancion) {
@@ -101,6 +142,35 @@ public class NotificationService {
                 formatear(scrim.getFin())
         );
         enviarATodos(scrim, "Scrim programado", mensaje);
+    }
+
+    public void notificarScrimRecomendada(Scrim scrim, Usuario usuario) {
+        String mensaje = """
+                Hola %s,
+
+                Encontramos una scrim que coincide con tus preferencias:
+                - Juego: %s
+                - Región: %s
+                - Formato: %s
+                - Rango requerido: %d - %d
+                - Latencia máxima: %d ms
+                - Inicio programado: %s
+
+                ID del scrim: %s
+
+                Ingresá a eScrims para sumarte mientras haya lugar.
+                """.formatted(
+                usuario.getEmail(),
+                scrim.getJuego(),
+                scrim.getRegion(),
+                scrim.getFormato(),
+                scrim.getRangoMin(),
+                scrim.getRangoMax(),
+                scrim.getLatenciaMaxMs(),
+                formatear(scrim.getInicio()),
+                scrim.getId()
+        );
+        enviar(usuario.getEmail(), "Nueva scrim compatible disponible", mensaje);
     }
 
     private void enviarATodos(Scrim scrim, String tipo, String mensaje) {

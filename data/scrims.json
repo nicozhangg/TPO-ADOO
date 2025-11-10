@@ -10,32 +10,107 @@
     "region": "America",
     "latenciaMaxMs": 10,
     "modalidad": "ranked-like",
-    "estado": "BUSCANDO_JUGADORES",
+    "estado": "FINALIZADO",
     "inicio": "2025-11-09T17:00",
     "fin": "2025-11-09T19:00",
     "equipo1": {
-      "nombre": "Equipo A",
+      "nombre": "Equipo 1",
       "jugadores": [
-        "lp366841@gmail.com",
-        "c@c.com"
+        "lp366841@gmail.com"
       ]
     },
     "equipo2": {
-      "nombre": "Equipo B",
+      "nombre": "Equipo 2",
       "jugadores": []
     },
     "jugadores": [
-      "lp366841@gmail.com",
-      "c@c.com"
+      "lp366841@gmail.com"
     ],
     "confirmacionesEquipos": {
-      "Equipo A": false,
-      "Equipo B": false
+      "Equipo 1": false,
+      "Equipo 2": false
+    },
+    "confirmaciones": {
+      "lp366841@gmail.com": false
+    },
+    "estadisticas": [],
+    "listaEspera": []
+  },
+  "7f2b1c6d-2f61-4f2b-9bc9-3c0de51a0f7a": {
+    "id": "7f2b1c6d-2f61-4f2b-9bc9-3c0de51a0f7a",
+    "juego": "Valorant",
+    "emailCreador": "a@a.com",
+    "rangoMin": 100,
+    "rangoMax": 30000,
+    "cupo": 1,
+    "formato": "1v1",
+    "region": "America",
+    "latenciaMaxMs": 25,
+    "modalidad": "ranked-like",
+    "estado": "LOBBY_ARMADO",
+    "inicio": "2025-11-08T21:00",
+    "fin": "2025-11-08T23:00",
+    "equipo1": {
+      "nombre": "Equipo 1",
+      "jugadores": [
+        "lp366841@gmail.com"
+      ]
+    },
+    "equipo2": {
+      "nombre": "Equipo 2",
+      "jugadores": [
+        "e@e.com"
+      ]
+    },
+    "jugadores": [
+      "lp366841@gmail.com",
+      "e@e.com"
+    ],
+    "confirmacionesEquipos": {
+      "Equipo 1": false,
+      "Equipo 2": false
     },
     "confirmaciones": {
       "lp366841@gmail.com": false,
-      "c@c.com": false
+      "e@e.com": false
     },
+    "estadisticas": [],
+    "listaEspera": [
+      {
+        "emailJugador": "lp366841@gmail.com",
+        "fechaSolicitud": "2025-11-09T21:31:17.658744400",
+        "orden": 1
+      }
+    ]
+  },
+  "c3f8a940-7469-4a24-b5a1-0e73e75f9298": {
+    "id": "c3f8a940-7469-4a24-b5a1-0e73e75f9298",
+    "juego": "Valorant",
+    "emailCreador": "a@a.com",
+    "rangoMin": 1100,
+    "rangoMax": 1400,
+    "cupo": 3,
+    "formato": "3v3",
+    "region": "Europa",
+    "latenciaMaxMs": 15,
+    "modalidad": "ranked-like",
+    "estado": "BUSCANDO_JUGADORES",
+    "inicio": "2025-11-20T19:00",
+    "fin": "2025-11-20T21:00",
+    "equipo1": {
+      "nombre": "Equipo 1",
+      "jugadores": []
+    },
+    "equipo2": {
+      "nombre": "Equipo 2",
+      "jugadores": []
+    },
+    "jugadores": [],
+    "confirmacionesEquipos": {
+      "Equipo 1": false,
+      "Equipo 2": false
+    },
+    "confirmaciones": {},
     "estadisticas": [],
     "listaEspera": []
   }

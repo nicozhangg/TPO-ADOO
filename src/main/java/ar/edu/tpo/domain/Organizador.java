@@ -24,6 +24,10 @@ public class Organizador extends Usuario {
         super(id, email, password, sancionesActivas, sancionesHistoricas);
     }
 
+    public Organizador(String id, String email, String password, List<SancionActiva> sancionesActivas, List<SancionHistorica> sancionesHistoricas, Integer strikes, Boolean suspendido) {
+        super(id, email, password, 0, 0, sancionesActivas, sancionesHistoricas, strikes, suspendido, null, null);
+    }
+
     @Override
     public String getTipo() {
         return "Organizador";

@@ -5,6 +5,7 @@ import ar.edu.tpo.domain.Organizador;
 import ar.edu.tpo.domain.SancionActiva;
 import ar.edu.tpo.domain.SancionHistorica;
 import ar.edu.tpo.domain.Usuario;
+import ar.edu.tpo.domain.alerta.ScrimAlerta;
 import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.regiones.StateRegion;
 import ar.edu.tpo.domain.roles.StateRoles;
@@ -65,11 +66,56 @@ public class UsuarioService {
 
     public void agregarSancion(String email, String motivo, Duration duracion) {
         Usuario usuario = buscar(email);
+        if (usuario.estaSuspendido()) {
+            throw new IllegalStateException("La cuenta está suspendida. No se pueden aplicar nuevas sanciones.");
+        }
         SancionActiva sancion = usuario.agregarSancion(motivo, duracion);
         repo.actualizar(usuario);
         if (notificaciones != null && sancion != null) {
             notificaciones.notificarSancionAplicada(usuario, sancion);
         }
+    }
+
+    public void aplicarCooldown(String email, String motivoBase, Duration duracion) {
+        Usuario usuario = buscar(email);
+        if (!(usuario instanceof Jugador)) {
+            throw new IllegalArgumentException("Solo los jugadores pueden recibir cooldowns.");
+        }
+        if (usuario.estaSuspendido()) {
+            throw new IllegalStateException("La cuenta está suspendida. No se pueden aplicar nuevas sanciones.");
+        }
+        SancionActiva sancion = usuario.agregarSancion(motivoBase + " - Cooldown", duracion);
+        repo.actualizar(usuario);
+        if (notificaciones != null && sancion != null) {
+            notificaciones.notificarSancionAplicada(usuario, sancion);
+        }
+    }
+
+    public int aplicarStrike(String email, String motivoBase) {
+        Usuario usuario = buscar(email);
+        if (!(usuario instanceof Jugador)) {
+            throw new IllegalArgumentException("Solo los jugadores pueden recibir strikes.");
+        }
+        if (usuario.estaSuspendido()) {
+            throw new IllegalStateException("La cuenta ya se encuentra suspendida.");
+        }
+        int strikes = usuario.incrementarStrike();
+        if (strikes >= 3) {
+            usuario.suspenderCuenta();
+            SancionActiva suspension = usuario.agregarSancion("Suspensión de cuenta (" + motivoBase + ")", null);
+            repo.actualizar(usuario);
+            if (notificaciones != null && suspension != null) {
+                notificaciones.notificarSancionAplicada(usuario, suspension);
+            }
+            return strikes;
+        }
+        Duration duracion = strikes == 1 ? Duration.ofHours(24) : Duration.ofDays(7);
+        SancionActiva sancion = usuario.agregarSancion("Strike " + strikes + " (" + motivoBase + ")", duracion);
+        repo.actualizar(usuario);
+        if (notificaciones != null && sancion != null) {
+            notificaciones.notificarSancionAplicada(usuario, sancion);
+        }
+        return strikes;
     }
 
     public List<SancionActiva> obtenerSancionesActivas(String email) {
@@ -78,6 +124,43 @@ public class UsuarioService {
 
     public List<SancionHistorica> obtenerSancionesHistoricas(String email) {
         return new ArrayList<>(buscar(email).getSancionesHistoricas());
+    }
+
+    public boolean agregarScrimFavorita(String email, String idScrim) {
+        Usuario usuario = buscar(email);
+        if (!(usuario instanceof Jugador)) {
+            throw new IllegalArgumentException("Solo los jugadores pueden guardar scrims favoritas.");
+        }
+        boolean agregada = usuario.agregarScrimFavorita(idScrim);
+        if (agregada) {
+            repo.actualizar(usuario);
+        }
+        return agregada;
+    }
+
+    public List<String> obtenerScrimsFavoritas(String email) {
+        Usuario usuario = buscar(email);
+        if (!(usuario instanceof Jugador)) {
+            return List.of();
+        }
+        return new ArrayList<>(usuario.getScrimsFavoritas());
+    }
+
+    public void agregarAlertaScrim(String email, ScrimAlerta alerta) {
+        Usuario usuario = buscar(email);
+        if (!(usuario instanceof Jugador)) {
+            throw new IllegalArgumentException("Solo los jugadores pueden configurar alertas.");
+        }
+        usuario.agregarAlertaScrim(alerta);
+        repo.actualizar(usuario);
+    }
+
+    public List<ScrimAlerta> obtenerAlertasScrim(String email) {
+        Usuario usuario = buscar(email);
+        if (!(usuario instanceof Jugador)) {
+            return List.of();
+        }
+        return new ArrayList<>(usuario.getAlertasScrim());
     }
 
     public SancionHistorica levantarSancion(String email, int indice) {
@@ -115,6 +198,9 @@ public class UsuarioService {
         Usuario usuario = repo.buscar(email);
         if (usuario == null || !usuario.getPasswordHash().equals(password)) {
             throw new IllegalArgumentException("Credenciales inválidas");
+        }
+        if (usuario.estaSuspendido()) {
+            throw new IllegalArgumentException("Cuenta suspendida. Contacta al soporte.");
         }
         if (notificaciones != null) {
             notificaciones.notificarInicioSesion(usuario);

@@ -58,8 +58,8 @@ public class Scrim {
         if (this.modalidad.isEmpty()) throw new IllegalArgumentException("Modalidad requerida");
 
         // Crear equipos: equipo1 (creador) y equipo2 (rival)
-        this.equipo1 = new Equipo("Equipo A");
-        this.equipo2 = new Equipo("Equipo B");
+        this.equipo1 = new Equipo("Equipo 1");
+        this.equipo2 = new Equipo("Equipo 2");
         this.confirmacionesEquipos.put(equipo1.getNombre(), Boolean.FALSE);
         this.confirmacionesEquipos.put(equipo2.getNombre(), Boolean.FALSE);
     }
@@ -149,8 +149,33 @@ public class Scrim {
     public void agregarEstadisticaDirecta(Estadistica e){
         estadisticas.add(e);
     }
-    public void agregarAListaEspera(String emailJugador){
+    public boolean agregarAListaEspera(String emailJugador){
+        if (estaEnListaEspera(emailJugador)) {
+            return false;
+        }
         listaEspera.add(new WaitlistEntry(emailJugador, LocalDateTime.now(), listaEspera.size()+1));
+        return true;
+    }
+
+    public boolean quitarDeListaEspera(String emailJugador) {
+        boolean removed = listaEspera.removeIf(entry -> entry.emailJugador().equalsIgnoreCase(emailJugador));
+        if (removed) {
+            reordenarListaEspera();
+        }
+        return removed;
+    }
+
+    public boolean estaEnListaEspera(String emailJugador) {
+        return listaEspera.stream().anyMatch(entry -> entry.emailJugador().equalsIgnoreCase(emailJugador));
+    }
+
+    public boolean hayLugarEnEquipo(String nombreEquipo) {
+        Equipo equipo = obtenerEquipoPorNombre(nombreEquipo);
+        return equipo.getCantidadJugadores() < cupo;
+    }
+
+    public boolean hayCupoDisponible() {
+        return getTotalJugadores() < cupo * 2;
     }
 
     // ===== Getters =====
@@ -230,5 +255,12 @@ public class Scrim {
                 .map(StateRangos::getNombre)
                 .findFirst()
                 .orElse(puntos + " MMR");
+    }
+
+    private void reordenarListaEspera() {
+        for (int i = 0; i < listaEspera.size(); i++) {
+            WaitlistEntry entry = listaEspera.get(i);
+            listaEspera.set(i, new WaitlistEntry(entry.emailJugador(), entry.fechaSolicitud(), i + 1));
+        }
     }
 }
