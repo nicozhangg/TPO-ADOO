@@ -31,31 +31,18 @@ public class ScrimCicloDeVidaService {
                             String formato, String region, int latenciaMaxMs,
                             String modalidad,
                             LocalDateTime inicio, LocalDateTime fin) {
-        String juegoNormalizado = juego != null ? juego.trim() : "";
-        if (!"valorant".equalsIgnoreCase(juegoNormalizado)) {
-            throw new IllegalArgumentException("Por ahora solo se permiten scrims de Valorant.");
-        }
-        juegoNormalizado = "Valorant";
-        if (formato == null || formato.isBlank()) {
-            throw new IllegalArgumentException("Formato requerido");
-        }
-        if (region == null || region.isBlank()) {
-            throw new IllegalArgumentException("Región requerida");
-        }
-        if (modalidad == null || modalidad.isBlank()) {
-            throw new IllegalArgumentException("Modalidad requerida");
-        }
-        if (latenciaMaxMs <= 0) {
-            throw new IllegalArgumentException("Latencia máxima debe ser mayor a 0");
-        }
-
+        String juegoNormalizado = normalizarJuego(juego);
+        String formatoNormalizado = textoObligatorio(formato, "Formato");
+        String regionNormalizada = textoObligatorio(region, "Región");
+        String modalidadNormalizada = textoObligatorio(modalidad, "Modalidad");
+        validarLatencia(latenciaMaxMs);
         usuarios.buscar(emailCreador);
 
         Scrim scrim = new Scrim(
                 juegoNormalizado, emailCreador,
                 rangoMin, rangoMax, cupo,
-                formato.trim(), region.trim(), latenciaMaxMs,
-                modalidad.trim()
+                formatoNormalizado, regionNormalizada, latenciaMaxMs,
+                modalidadNormalizada
         );
 
         if (inicio != null && fin != null) {
@@ -85,50 +72,42 @@ public class ScrimCicloDeVidaService {
     }
 
     public void programar(String idScrim, LocalDateTime inicio, LocalDateTime fin) {
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
         scrim.programar(inicio, fin);
         repo.guardar(scrim);
         System.out.println("[evento] ScrimProgramado " + idScrim + " " + inicio + "→" + fin);
-        if (notificaciones != null) {
-            notificaciones.notificarScrimProgramado(scrim);
-        }
+        notificarProgramacion(scrim);
     }
 
     public void limpiarAgenda(String idScrim) {
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
         scrim.limpiarAgenda();
         repo.guardar(scrim);
         System.out.println("[evento] ScrimAgendaLimpia " + idScrim);
     }
 
     public void iniciarScrim(String idScrim) {
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
         scrim.iniciar();
         repo.guardar(scrim);
         System.out.println("[evento] ScrimEnJuego " + idScrim);
-        if (notificaciones != null) {
-            notificaciones.notificarScrimEstado(scrim, "EN_JUEGO");
-        }
+        notificarEstado(scrim, "EN_JUEGO");
     }
 
     public void finalizarScrim(String idScrim) {
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
         scrim.finalizar();
         repo.guardar(scrim);
         System.out.println("[evento] ScrimFinalizado " + idScrim);
-        if (notificaciones != null) {
-            notificaciones.notificarScrimEstado(scrim, "FINALIZADO");
-        }
+        notificarEstado(scrim, "FINALIZADO");
     }
 
     public void cancelarScrim(String idScrim) {
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
         scrim.cancelar();
         repo.guardar(scrim);
         System.out.println("[evento] ScrimCancelado " + idScrim);
-        if (notificaciones != null) {
-            notificaciones.notificarScrimEstado(scrim, "CANCELADO");
-        }
+        notificarEstado(scrim, "CANCELADO");
     }
 
     private void notificarCoincidencias(Scrim scrim) {
@@ -187,6 +166,42 @@ public class ScrimCicloDeVidaService {
                 && jugador.getMmr() >= scrim.getRangoMin()
                 && jugador.getMmr() <= scrim.getRangoMax();
     }
+
+    private Scrim obtenerScrim(String idScrim) {
+        return repo.buscarPorId(idScrim);
+    }
+
+    private String normalizarJuego(String juego) {
+        String valor = juego != null ? juego.trim() : "";
+        if (!"valorant".equalsIgnoreCase(valor)) {
+            throw new IllegalArgumentException("Por ahora solo se permiten scrims de Valorant.");
+        }
+        return "Valorant";
+    }
+
+    private String textoObligatorio(String valor, String nombreCampo) {
+        String texto = valor != null ? valor.trim() : "";
+        if (texto.isEmpty()) {
+            throw new IllegalArgumentException(nombreCampo + " requerido");
+        }
+        return texto;
+    }
+
+    private void validarLatencia(int latenciaMaxMs) {
+        if (latenciaMaxMs <= 0) {
+            throw new IllegalArgumentException("Latencia máxima debe ser mayor a 0");
+        }
+    }
+
+    private void notificarProgramacion(Scrim scrim) {
+        if (notificaciones != null) {
+            notificaciones.notificarScrimProgramado(scrim);
+        }
+    }
+
+    private void notificarEstado(Scrim scrim, String estado) {
+        if (notificaciones != null) {
+            notificaciones.notificarScrimEstado(scrim, estado);
+        }
+    }
 }
-
-

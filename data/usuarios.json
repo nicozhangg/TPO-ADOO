@@ -48,11 +48,14 @@
     "region": "America",
     "sancionesActivas": [
       {
-        "motivo": "Strike 1 (NoShow)",
-        "expiraEn": "2025-11-10T19:25:37.839428900"
-      },
-      {
         "motivo": "Suspensión de cuenta (Abandono)"
+      }
+    ],
+    "sancionesHistoricas": [
+      {
+        "motivo": "Strike 1 (NoShow)",
+        "expiraEn": "2025-11-10T19:25:37.839428900",
+        "levantadaEn": "2025-11-10T19:44:03.010045600"
       }
     ],
     "scrimsFavoritas": [],

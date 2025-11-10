@@ -26,16 +26,24 @@ public class ScrimStatsService {
     public void cargarResultado(String idScrim, String emailJugador,
                                 int kills, int assists, int deaths, double rating) {
         usuarios.buscar(emailJugador);
-        Scrim scrim = repo.buscarPorId(idScrim);
-        if (scrim.getEstado() != FinalizadoState.INSTANCIA) {
-            throw new IllegalStateException("Solo se pueden cargar resultados cuando el scrim está en estado FINALIZADO.");
-        }
+        Scrim scrim = obtenerScrim(idScrim);
+        verificarFinalizado(scrim);
         KDA kda = new KDA(kills, assists, deaths);
         Estadistica estadistica = new Estadistica(emailJugador, kda, rating, LocalDateTime.now());
         scrim.registrarEstadistica(estadistica);
         repo.guardar(scrim);
         System.out.println("[evento] ResultadoReportado scrim=" + idScrim +
                 " jugador=" + emailJugador + " kda=" + kda.valor());
+    }
+
+    private Scrim obtenerScrim(String idScrim) {
+        return repo.buscarPorId(idScrim);
+    }
+
+    private void verificarFinalizado(Scrim scrim) {
+        if (scrim.getEstado() != FinalizadoState.INSTANCIA) {
+            throw new IllegalStateException("Solo se pueden cargar resultados cuando el scrim está en estado FINALIZADO.");
+        }
     }
 }
 

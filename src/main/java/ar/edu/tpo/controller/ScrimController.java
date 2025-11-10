@@ -47,12 +47,10 @@ public class ScrimController {
 
     // ================== CREAR ==================
 
-    /** Compat (cupo=2, sin fechas, valores por defecto) */
+    /** Compatibilidad: crea scrim con valores por defecto (sin agenda) */
     public void crear(String juego, String emailCreador, int rangoMin, int rangoMax){
-        validarPermisoOrganizer();
-        var s = lifecycleService.crearScrim(juego, emailCreador, rangoMin, rangoMax,
+        crear(juego, emailCreador, rangoMin, rangoMax,
                 2, "2v2", "REGION_DESCONOCIDA", 100, "casual", null, null);
-        System.out.println("Scrim creado: " + s.getId());
     }
 
     /** Nuevo: crear con parámetros completos y fechas opcionales */
@@ -61,17 +59,14 @@ public class ScrimController {
                       String modalidad,
                       String inicioStr, String finStr) {
         validarPermisoOrganizer();
-        // Parsear fechas interpretándolas como hora de Argentina
-        ZonedDateTime iniZoned = ArgentinaTimeZone.parsear(inicioStr);
-        ZonedDateTime finZoned = ArgentinaTimeZone.parsear(finStr);
-        LocalDateTime ini = (iniZoned != null) ? ArgentinaTimeZone.aLocalDateTime(iniZoned) : null;
-        LocalDateTime fin = (finZoned != null) ? ArgentinaTimeZone.aLocalDateTime(finZoned) : null;
-        var s = lifecycleService.crearScrim(juego, emailCreador,
+        LocalDateTime ini = parsearFechaOpcional(inicioStr);
+        LocalDateTime fin = parsearFechaOpcional(finStr);
+        var scrim = lifecycleService.crearScrim(juego, emailCreador,
                 rangoMin, rangoMax, cupo,
                 formato, region, latenciaMaxMs,
                 modalidad,
                 ini, fin);
-        System.out.println("Scrim creado: " + s.getId());
+        System.out.println("Scrim creado: " + scrim.getId());
     }
 
     // ================== LISTAR ==================
@@ -82,55 +77,23 @@ public class ScrimController {
 
     // ================== LOBBY ===================
     public void unirse(String idScrim, String emailJugador){
-        Usuario usuario = requerirUsuarioActual();
-        if (usuario instanceof Jugador jugador) {
-            if (!jugador.getEmail().equals(emailJugador)) {
-                throw new SecurityException("Solo puedes unirte a un scrim con tu propio email");
-            }
-        } else if (!(usuario instanceof Organizador)) {
-            throw new SecurityException("Operación no permitida para el usuario actual");
-        }
-
+        validarPermisoJugadorOOrganizador(emailJugador, "unirte a un scrim");
         lobbyService.unirse(idScrim, emailJugador); // Determina equipo automáticamente
         System.out.println("Jugador unido.");
     }
     
     public void unirseAEquipo(String idScrim, String emailJugador, String nombreEquipo){
-        Usuario usuario = requerirUsuarioActual();
-        if (usuario instanceof Jugador jugador) {
-            if (!jugador.getEmail().equals(emailJugador)) {
-                throw new SecurityException("Solo puedes unirte a un scrim con tu propio email");
-            }
-        } else if (!(usuario instanceof Organizador)) {
-            throw new SecurityException("Operación no permitida para el usuario actual");
-        }
-
+        validarPermisoJugadorOOrganizador(emailJugador, "unirte a un equipo");
         lobbyService.unirseAEquipo(idScrim, emailJugador, nombreEquipo);
         System.out.println("Jugador unido al equipo.");
     }
     public void salir(String idScrim, String emailJugador){
-        Usuario usuario = requerirUsuarioActual();
-        if (usuario instanceof Jugador jugador) {
-            if (!jugador.getEmail().equals(emailJugador)) {
-                throw new SecurityException("Solo puedes salir con tu propio email");
-            }
-        } else if (!(usuario instanceof Organizador)) {
-            throw new SecurityException("Operación no permitida para el usuario actual");
-        }
-
+        validarPermisoJugadorOOrganizador(emailJugador, "salir del scrim");
         lobbyService.salir(idScrim, emailJugador);
         System.out.println("Salida registrada.");
     }
     public void confirmar(String idScrim, String emailJugador){
-        Usuario usuario = requerirUsuarioActual();
-        if (usuario instanceof Jugador jugador) {
-            if (!jugador.getEmail().equals(emailJugador)) {
-                throw new SecurityException("Solo puedes confirmar tu propia participación");
-            }
-        } else if (!(usuario instanceof Organizador)) {
-            throw new SecurityException("Operación no permitida para el usuario actual");
-        }
-
+        validarPermisoJugadorOOrganizador(emailJugador, "confirmar tu participación");
         lobbyService.confirmarJugador(idScrim, emailJugador);
         System.out.println("Confirmación registrada.");
     }
@@ -144,11 +107,8 @@ public class ScrimController {
     // ================== AGENDA/FLUJO ==================
     public void programar(String idScrim, String inicioStr, String finStr){
         validarPermisoOrganizer();
-        // Parsear fechas interpretándolas como hora de Argentina
-        ZonedDateTime iniZoned = ArgentinaTimeZone.parsear(inicioStr);
-        ZonedDateTime finZoned = ArgentinaTimeZone.parsear(finStr);
-        LocalDateTime ini = ArgentinaTimeZone.aLocalDateTime(iniZoned);
-        LocalDateTime fin = ArgentinaTimeZone.aLocalDateTime(finZoned);
+        LocalDateTime ini = parsearFechaObligatoria(inicioStr, "inicio");
+        LocalDateTime fin = parsearFechaObligatoria(finStr, "fin");
         lifecycleService.programar(idScrim, ini, fin);
         System.out.println("Scrim programado/reprogramado.");
     }
@@ -192,24 +152,52 @@ public class ScrimController {
             return;
         }
         System.out.println("\n=== LISTA DE SUPLENTES (" + scrim.getId() + ") ===");
-        suplentes.forEach(entry -> System.out.println(
-                "%d. %s (desde %s)".formatted(
-                        entry.orden(),
-                        entry.emailJugador(),
-                        entry.fechaSolicitud()
-                )));
+        suplentes.forEach(entry -> System.out.printf(
+                "%d. %s (desde %s)%n",
+                entry.orden(),
+                entry.emailJugador(),
+                entry.fechaSolicitud()
+        ));
     }
 
     public String formatearResumen(Scrim scrim) {
-        return "%s | %s | %s | %s | Rango %d-%d | Latencia máx %d ms"
-                .formatted(
-                        scrim.getId(),
-                        scrim.getJuego(),
-                        scrim.getRegion(),
-                        scrim.getFormato(),
-                        scrim.getRangoMin(),
-                        scrim.getRangoMax(),
-                        scrim.getLatenciaMaxMs()
-                );
+        return String.format(
+                "%s | %s | %s | %s | Rango %d-%d | Latencia máx %d ms",
+                scrim.getId(),
+                scrim.getJuego(),
+                scrim.getRegion(),
+                scrim.getFormato(),
+                scrim.getRangoMin(),
+                scrim.getRangoMax(),
+                scrim.getLatenciaMaxMs()
+        );
+    }
+
+    // ================== Helpers ==================
+    private void validarPermisoJugadorOOrganizador(String emailJugador, String accion) {
+        Usuario usuario = requerirUsuarioActual();
+        if (usuario instanceof Organizador) {
+            return;
+        }
+        if (usuario instanceof Jugador jugador) {
+            if (!jugador.getEmail().equals(emailJugador)) {
+                throw new SecurityException("Solo puedes " + accion + " con tu propio email");
+            }
+            return;
+        }
+        throw new SecurityException("Operación no permitida para el usuario actual");
+    }
+
+    private LocalDateTime parsearFechaOpcional(String fechaStr) {
+        ZonedDateTime zoned = ArgentinaTimeZone.parsear(fechaStr);
+        return zoned != null ? ArgentinaTimeZone.aLocalDateTime(zoned) : null;
+    }
+
+    private LocalDateTime parsearFechaObligatoria(String fechaStr, String campo) {
+        LocalDateTime fecha = parsearFechaOpcional(fechaStr);
+        if (fecha == null) {
+            throw new IllegalArgumentException("Fecha de " + campo + " requerida");
+        }
+        return fecha;
     }
 }

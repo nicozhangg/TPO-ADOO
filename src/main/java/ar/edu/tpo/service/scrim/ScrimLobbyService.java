@@ -34,7 +34,7 @@ public class ScrimLobbyService {
 
     public void unirse(String idScrim, String emailJugador) {
         var usuario = usuarios.buscar(emailJugador);
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
         validarPuedeUnirse(usuario, scrim);
         if (!scrim.hayCupoDisponible()) {
             registrarSuplente(scrim, emailJugador);
@@ -50,7 +50,7 @@ public class ScrimLobbyService {
 
     public void unirseAEquipo(String idScrim, String emailJugador, String nombreEquipo) {
         var usuario = usuarios.buscar(emailJugador);
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
         validarPuedeUnirse(usuario, scrim);
         if (!scrim.hayLugarEnEquipo(nombreEquipo)) {
             if (scrim.hayCupoDisponible()) {
@@ -69,10 +69,9 @@ public class ScrimLobbyService {
     }
 
     public void salir(String idScrim, String emailJugador) {
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
 
-        boolean estaEnScrim = scrim.getEquipo1().contieneJugador(emailJugador) || scrim.getEquipo2().contieneJugador(emailJugador);
-        if (!estaEnScrim) {
+        if (!jugadorPerteneceAScrim(scrim, emailJugador)) {
             throw new IllegalArgumentException("El jugador no participa de la scrim");
         }
 
@@ -98,25 +97,21 @@ public class ScrimLobbyService {
 
     public void confirmarJugador(String idScrim, String emailJugador) {
         usuarios.buscar(emailJugador);
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
         scrim.confirmarJugador(emailJugador);
         boolean todosConfirmados = scrim.ambosEquiposConfirmados();
         repo.guardar(scrim);
         System.out.println("[evento] EquipoConfirmado scrim=" + idScrim + " jugador=" + emailJugador);
-        if (notificaciones != null && todosConfirmados && scrim.getEstado() == ConfirmadoState.INSTANCIA) {
-            notificaciones.notificarScrimEstado(scrim, scrim.getEstado().getNombre());
-        }
+        notificarSiQuedaConfirmado(scrim, todosConfirmados);
     }
 
     public void confirmarEquipo(String idScrim, String nombreEquipo) {
-        Scrim scrim = repo.buscarPorId(idScrim);
+        Scrim scrim = obtenerScrim(idScrim);
         scrim.confirmarEquipo(nombreEquipo);
         boolean todosConfirmados = scrim.ambosEquiposConfirmados();
         repo.guardar(scrim);
         System.out.println("[evento] EquipoConfirmado scrim=" + idScrim + " equipo=" + nombreEquipo);
-        if (notificaciones != null && todosConfirmados && scrim.getEstado() == ConfirmadoState.INSTANCIA) {
-            notificaciones.notificarScrimEstado(scrim, scrim.getEstado().getNombre());
-        }
+        notificarSiQuedaConfirmado(scrim, todosConfirmados);
     }
 
     private void validarPuedeUnirse(Usuario usuario, Scrim scrim) {
@@ -133,7 +128,7 @@ public class ScrimLobbyService {
             throw new SecurityException("Solo los jugadores pueden unirse a scrims");
         }
 
-        if (scrim.getEquipo1().contieneJugador(jugador.getEmail()) || scrim.getEquipo2().contieneJugador(jugador.getEmail())) {
+        if (jugadorPerteneceAScrim(scrim, jugador.getEmail())) {
             String equipoActual = scrim.getEquipo1().contieneJugador(jugador.getEmail())
                     ? scrim.getEquipo1().getNombre()
                     : scrim.getEquipo2().getNombre();
@@ -189,6 +184,20 @@ public class ScrimLobbyService {
     private void notificarCupoLiberado(Scrim scrim) {
         if (notificaciones != null && !scrim.getListaEspera().isEmpty()) {
             notificaciones.notificarCupoDisponible(scrim);
+        }
+    }
+
+    private Scrim obtenerScrim(String idScrim) {
+        return repo.buscarPorId(idScrim);
+    }
+
+    private boolean jugadorPerteneceAScrim(Scrim scrim, String emailJugador) {
+        return scrim.getEquipo1().contieneJugador(emailJugador) || scrim.getEquipo2().contieneJugador(emailJugador);
+    }
+
+    private void notificarSiQuedaConfirmado(Scrim scrim, boolean todosConfirmados) {
+        if (notificaciones != null && todosConfirmados && scrim.getEstado() == ConfirmadoState.INSTANCIA) {
+            notificaciones.notificarScrimEstado(scrim, scrim.getEstado().getNombre());
         }
     }
 }
