@@ -148,6 +148,13 @@ public class Jugador extends Usuario {
         alertasScrim.add(alerta);
     }
 
+    public ScrimAlerta eliminarAlertaScrim(int indice) {
+        if (indice < 0 || indice >= alertasScrim.size()) {
+            throw new IllegalArgumentException("Índice de alerta inválido.");
+        }
+        return alertasScrim.remove(indice);
+    }
+
     @Override
     public String getTipo() {
         return "Jugador";

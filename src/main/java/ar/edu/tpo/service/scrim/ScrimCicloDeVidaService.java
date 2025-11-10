@@ -31,6 +31,11 @@ public class ScrimCicloDeVidaService {
                             String formato, String region, int latenciaMaxMs,
                             String modalidad,
                             LocalDateTime inicio, LocalDateTime fin) {
+        String juegoNormalizado = juego != null ? juego.trim() : "";
+        if (!"valorant".equalsIgnoreCase(juegoNormalizado)) {
+            throw new IllegalArgumentException("Por ahora solo se permiten scrims de Valorant.");
+        }
+        juegoNormalizado = "Valorant";
         if (formato == null || formato.isBlank()) {
             throw new IllegalArgumentException("Formato requerido");
         }
@@ -47,7 +52,7 @@ public class ScrimCicloDeVidaService {
         usuarios.buscar(emailCreador);
 
         Scrim scrim = new Scrim(
-                juego, emailCreador,
+                juegoNormalizado, emailCreador,
                 rangoMin, rangoMax, cupo,
                 formato.trim(), region.trim(), latenciaMaxMs,
                 modalidad.trim()

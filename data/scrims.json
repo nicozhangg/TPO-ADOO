@@ -75,13 +75,7 @@
       "e@e.com": false
     },
     "estadisticas": [],
-    "listaEspera": [
-      {
-        "emailJugador": "lp366841@gmail.com",
-        "fechaSolicitud": "2025-11-09T21:31:17.658744400",
-        "orden": 1
-      }
-    ]
+    "listaEspera": []
   },
   "3": {
     "id": "3",
@@ -97,6 +91,35 @@
     "estado": "BUSCANDO_JUGADORES",
     "inicio": "2025-11-20T19:00",
     "fin": "2025-11-20T21:00",
+    "equipo1": {
+      "nombre": "Equipo 1",
+      "jugadores": []
+    },
+    "equipo2": {
+      "nombre": "Equipo 2",
+      "jugadores": []
+    },
+    "jugadores": [],
+    "confirmacionesEquipos": {
+      "Equipo 1": false,
+      "Equipo 2": false
+    },
+    "confirmaciones": {},
+    "estadisticas": [],
+    "listaEspera": []
+  },
+  "4": {
+    "id": "4",
+    "juego": "Valorant",
+    "emailCreador": "a@a.com",
+    "rangoMin": 300,
+    "rangoMax": 301,
+    "cupo": 1,
+    "formato": "1v1",
+    "region": "America",
+    "latenciaMaxMs": 1,
+    "modalidad": "ranked-like",
+    "estado": "BUSCANDO_JUGADORES",
     "equipo1": {
       "nombre": "Equipo 1",
       "jugadores": []

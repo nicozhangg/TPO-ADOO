@@ -156,6 +156,16 @@ public class UsuarioService {
         repo.actualizar(jugador);
     }
 
+    public ScrimAlerta eliminarAlertaScrim(String email, int indice) {
+        Usuario usuario = buscar(email);
+        if (!(usuario instanceof Jugador jugador)) {
+            throw new IllegalArgumentException("Solo los jugadores pueden eliminar alertas.");
+        }
+        ScrimAlerta eliminada = jugador.eliminarAlertaScrim(indice);
+        repo.actualizar(jugador);
+        return eliminada;
+    }
+
     public List<ScrimAlerta> obtenerAlertasScrim(String email) {
         Usuario usuario = buscar(email);
         if (!(usuario instanceof Jugador jugador)) {

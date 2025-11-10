@@ -109,15 +109,7 @@
     "scrimsFavoritas": [
       "2"
     ],
-    "alertasScrim": [
-      {
-        "region": "America",
-        "rangoMin": 0,
-        "rangoMax": 1800,
-        "latenciaMax": 50,
-        "formato": "3v3"
-      }
-    ],
+    "alertasScrim": [],
     "strikeCount": 0,
     "suspendido": false
   }

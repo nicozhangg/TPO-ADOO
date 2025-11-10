@@ -7,6 +7,7 @@ import ar.edu.tpo.domain.SancionActiva;
 import ar.edu.tpo.domain.SancionHistorica;
 import ar.edu.tpo.domain.Usuario;
 import ar.edu.tpo.domain.Scrim;
+import ar.edu.tpo.domain.estado.FinalizadoState;
 import ar.edu.tpo.domain.alerta.ScrimAlerta;
 import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.regiones.StateRegion;
@@ -19,6 +20,7 @@ import ar.edu.tpo.notification.NotificationService;
 import ar.edu.tpo.notification.RespaldoNotificacionDecorator;
 import ar.edu.tpo.repository.JsonScrimRepository;
 import ar.edu.tpo.repository.JsonUsuarioRepository;
+import ar.edu.tpo.service.ArgentinaTimeZone;
 import ar.edu.tpo.service.ConductaService;
 import ar.edu.tpo.service.MockUsuarioActualPort;
 import ar.edu.tpo.service.SancionSchedulerService;
@@ -29,6 +31,7 @@ import ar.edu.tpo.service.scrim.ScrimSchedulerService;
 import ar.edu.tpo.service.scrim.ScrimStatsService;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -173,6 +176,7 @@ public class Main {
         System.out.println("7. Ver scrims favoritas");
         System.out.println("8. Configurar alerta de scrim");
         System.out.println("9. Ver alertas configuradas");
+        System.out.println("10. Eliminar alerta configurada");
         System.out.println("0. Cerrar sesión");
         System.out.print("Seleccione una opción: ");
     }
@@ -346,18 +350,15 @@ public class Main {
                 }
             }
             case 8 -> {
-                String juego = leerOpcional("Juego preferido (ENTER para cualquiera): ");
+                String juego = "Valorant";
+                System.out.println("Juego configurado: " + juego + " (único disponible por ahora).");
                 String region = seleccionarRegionOpcionalLibre();
-                Integer rangoMin = seleccionarRangoOpcional("Seleccione rango mínimo (0 = cualquiera): ", false);
-                Integer rangoMax = seleccionarRangoOpcional("Seleccione rango máximo (0 = cualquiera): ", true);
-                if (rangoMin != null && rangoMax != null && rangoMax < rangoMin) {
-                    int tmp = rangoMin;
-                    rangoMin = rangoMax;
-                    rangoMax = tmp;
-                }
+                Integer rangoMin = seleccionarRangoMinimo("Seleccione rango mínimo (0 = cualquiera): ");
+                Integer rangoMax = seleccionarRangoMaximo("Seleccione rango máximo (0 = cualquiera y debe ser >= mínimo): ", rangoMin);
                 Integer latenciaMax = leerEnteroOpcionalNulo("Latencia máxima permitida (ENTER para omitir): ");
                 String formato = seleccionarFormatoOpcional();
-                ScrimAlerta alerta = new ScrimAlerta(juego, region, rangoMin, rangoMax, latenciaMax, formato);
+                String modalidad = seleccionarModalidadOpcional();
+                ScrimAlerta alerta = new ScrimAlerta(juego, region, rangoMin, rangoMax, latenciaMax, formato, modalidad);
                 try {
                     usuarioService.agregarAlertaScrim(jugador.getEmail(), alerta);
                     usuarioActual.establecerUsuarioActual(usuarioService.buscar(jugador.getEmail()));
@@ -377,9 +378,41 @@ public class Main {
                         System.out.println((i + 1) + ". Juego: " + valorOAny(alerta.getJuego()) +
                                 " | Región: " + valorOAny(alerta.getRegion()) +
                                 " | Formato: " + valorOAny(alerta.getFormato()) +
+                                " | Modalidad: " + valorOAny(alerta.getModalidad()) +
                                 " | Rango: " + rangoTexto(alerta.getRangoMin(), alerta.getRangoMax()) +
                                 " | Latencia máx: " + (alerta.getLatenciaMax() != null ? alerta.getLatenciaMax() + " ms" : "cualquiera"));
                     }
+                }
+            }
+            case 10 -> {
+                List<ScrimAlerta> alertas = usuarioService.obtenerAlertasScrim(jugador.getEmail());
+                if (alertas.isEmpty()) {
+                    System.out.println("No tenés alertas configuradas para eliminar.");
+                    break;
+                }
+                System.out.println("\n=== ELIMINAR ALERTA ===");
+                for (int i = 0; i < alertas.size(); i++) {
+                    ScrimAlerta alerta = alertas.get(i);
+                    System.out.println((i + 1) + ". Juego: " + valorOAny(alerta.getJuego()) +
+                            " | Región: " + valorOAny(alerta.getRegion()) +
+                            " | Formato: " + valorOAny(alerta.getFormato()) +
+                            " | Modalidad: " + valorOAny(alerta.getModalidad()) +
+                            " | Rango: " + rangoTexto(alerta.getRangoMin(), alerta.getRangoMax()) +
+                            " | Latencia máx: " + (alerta.getLatenciaMax() != null ? alerta.getLatenciaMax() + " ms" : "cualquiera"));
+                }
+                int opcionEliminar = leerEnteroConMensaje("Seleccione la alerta a eliminar (1-" + alertas.size() + "): ");
+                if (opcionEliminar < 1 || opcionEliminar > alertas.size()) {
+                    System.out.println("Opción inválida. No se eliminó ninguna alerta.");
+                    break;
+                }
+                try {
+                    ScrimAlerta eliminada = usuarioService.eliminarAlertaScrim(jugador.getEmail(), opcionEliminar - 1);
+                    usuarioActual.establecerUsuarioActual(usuarioService.buscar(jugador.getEmail()));
+                    System.out.println("Alerta eliminada: Juego " + valorOAny(eliminada.getJuego()) +
+                            " | Región " + valorOAny(eliminada.getRegion()) +
+                            " | Formato " + valorOAny(eliminada.getFormato()));
+                } catch (Exception e) {
+                    System.out.println("Error al eliminar alerta: " + e.getMessage());
                 }
             }
             default -> System.out.println("Opción inválida.");
@@ -442,31 +475,37 @@ public class Main {
                 scrimController.listar();
             }
             case 2 -> {
-                System.out.print("Juego: ");
-                String juego = scanner.nextLine().trim();
+                String juego = "Valorant";
+                System.out.println("Juego (único disponible): " + juego);
                 String emailCreador = usuarioActual.obtenerEmailUsuarioActual();
                 StateRangos rangoMinObj = pedirRango("mínimo");
-                StateRangos rangoMaxObj = pedirRango("máximo");
+                StateRangos rangoMaxObj;
+                while (true) {
+                    rangoMaxObj = pedirRango("máximo");
+                    if (rangoMaxObj.getMaximo() < rangoMinObj.getMinimo()) {
+                        System.out.println("El rango máximo debe ser mayor o igual al rango mínimo seleccionado (" +
+                                rangoMinObj.getNombre() + "). Intente nuevamente.");
+                    } else {
+                        break;
+                    }
+                }
                 int rangoMin = rangoMinObj.getMinimo();
                 int rangoMax = rangoMaxObj.getMaximo();
-                if (rangoMax < rangoMin) {
-                    int tmp = rangoMin;
-                    rangoMin = rangoMax;
-                    rangoMax = tmp;
-                }
                 int cupo = seleccionarCupo();
                 String formato = seleccionarFormato(cupo);
                 String region = seleccionarRegion();
                 System.out.print("Latencia máxima (ms): ");
                 int latenciaMax = leerEntero();
                 String modalidad = seleccionarModalidad();
-                System.out.print("Inicio (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
-                String inicioStr = scanner.nextLine().trim();
-                System.out.print("Fin (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
-                String finStr = scanner.nextLine().trim();
-                scrimController.crear(juego, emailCreador, rangoMin, rangoMax,
-                        cupo, formato, region, latenciaMax, modalidad,
-                        inicioStr, finStr);
+                String inicioStr = leerFechaOpcional("Inicio (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
+                String finStr = leerFechaFinPosterior("Fin (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ", inicioStr);
+                try {
+                    scrimController.crear(juego, emailCreador, rangoMin, rangoMax,
+                            cupo, formato, region, latenciaMax, modalidad,
+                            inicioStr, finStr);
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Error al crear scrim: " + e.getMessage());
+                }
             }
             case 3 -> {
                 System.out.print("ID del scrim: ");
@@ -485,11 +524,13 @@ public class Main {
             case 5 -> {
                 System.out.print("ID del scrim: ");
                 String idScrim = scanner.nextLine().trim();
-                System.out.print("Fecha inicio (yyyy-MM-dd HH:mm, hora Argentina): ");
-                String inicio = scanner.nextLine().trim();
-                System.out.print("Fecha fin (yyyy-MM-dd HH:mm, hora Argentina): ");
-                String fin = scanner.nextLine().trim();
-                scrimController.programar(idScrim, inicio, fin);
+                String inicio = leerFechaRequerida("Fecha inicio (yyyy-MM-dd HH:mm, hora Argentina): ");
+                String fin = leerFechaFinReprogramacion("Fecha fin (yyyy-MM-dd HH:mm, hora Argentina): ", inicio);
+                try {
+                    scrimController.programar(idScrim, inicio, fin);
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Error al programar scrim: " + e.getMessage());
+                }
             }
             case 6 -> {
                 System.out.print("ID del scrim: ");
@@ -516,6 +557,10 @@ public class Main {
                     scrim = scrimController.buscar(idScrim);
                 } catch (Exception e) {
                     System.out.println("No se pudo encontrar el scrim: " + e.getMessage());
+                    break;
+                }
+                if (scrim.getEstado() != FinalizadoState.INSTANCIA) {
+                    System.out.println("Error: solo se pueden cargar resultados cuando el scrim está en estado FINALIZADO. Estado actual: " + scrim.getEstado().getNombre());
                     break;
                 }
                 List<String> jugadores = new ArrayList<>(scrim.getJugadores());
@@ -704,6 +749,17 @@ public class Main {
         return leerEntero();
     }
 
+    private static int leerEnteroNoNegativo(String mensaje) {
+        while (true) {
+            System.out.print(mensaje);
+            int valor = leerEntero();
+            if (valor >= 0) {
+                return valor;
+            }
+            System.out.println("El valor no puede ser negativo. Intente nuevamente.");
+        }
+    }
+
     private static double leerDoubleConMensaje(String mensaje) {
         System.out.print(mensaje);
         return leerDouble();
@@ -729,7 +785,12 @@ public class Main {
                 return valorActual;
             }
             try {
-                return Integer.parseInt(input);
+                int valor = Integer.parseInt(input);
+                if (valor < 0) {
+                    System.out.println("El valor no puede ser negativo. Intente nuevamente.");
+                    continue;
+                }
+                return valor;
             } catch (NumberFormatException e) {
                 System.out.println("Por favor ingrese un número válido o deje vacío para mantener el actual.");
             }
@@ -823,8 +884,8 @@ public class Main {
         String email = leerNoVacio("Email del jugador: ");
         String password = leerNoVacio("Contraseña: ");
         System.out.println("Ingrese datos del perfil competitivo:");
-        int mmr = leerEnteroConMensaje("MMR (número entero): ");
-        int latencia = leerEnteroConMensaje("Latencia promedio (ms): ");
+        int mmr = leerEnteroNoNegativo("MMR (número entero): ");
+        int latencia = leerEnteroNoNegativo("Latencia promedio (ms): ");
 
         StateRoles rolPreferido = pedirRol();
         StateRegion region = pedirRegion();
@@ -869,11 +930,11 @@ public class Main {
     }
 
     private static int seleccionarCupo() {
-        int[] opciones = {5, 3, 1};
+        int[] opciones = {1, 3, 5};
         System.out.println("Jugadores por equipo:");
-        System.out.println("1. 5 (5v5)");
+        System.out.println("1. 1 (1v1)");
         System.out.println("2. 3 (3v3)");
-        System.out.println("3. 1 (1v1)");
+        System.out.println("3. 5 (5v5)");
         while (true) {
             int opcion = leerEnteroConMensaje("Seleccione una opción: ");
             if (opcion >= 1 && opcion <= opciones.length) {
@@ -911,24 +972,131 @@ public class Main {
         }
     }
 
-    private static Integer leerEnteroOpcionalNulo(String mensaje) {
-        System.out.print(mensaje);
-        String input = scanner.nextLine().trim();
-        if (input.isBlank()) {
-            return null;
+    private static String seleccionarModalidadOpcional() {
+        String[] modalidades = {"ranked-like", "casual", "práctica"};
+        System.out.println("Modalidades disponibles (ENTER para cualquiera):");
+        for (int i = 0; i < modalidades.length; i++) {
+            System.out.println((i + 1) + ". " + modalidades[i]);
         }
-        try {
-            return Integer.parseInt(input);
-        } catch (NumberFormatException e) {
-            System.out.println("Valor inválido. Se ignorará este campo.");
-            return null;
+        while (true) {
+            System.out.print("Seleccione modalidad: ");
+            String input = scanner.nextLine().trim();
+            if (input.isBlank()) {
+                return null;
+            }
+            try {
+                int opcion = Integer.parseInt(input);
+                if (opcion >= 1 && opcion <= modalidades.length) {
+                    return modalidades[opcion - 1];
+                }
+            } catch (NumberFormatException ignored) {
+            }
+            System.out.println("Opción inválida. Intente nuevamente o deje vacío para cualquiera.");
+        }
+    }
+    private static Integer leerEnteroOpcionalNulo(String mensaje) {
+        while (true) {
+            System.out.print(mensaje);
+            String input = scanner.nextLine().trim();
+            if (input.isBlank()) {
+                return null;
+            }
+            try {
+                int valor = Integer.parseInt(input);
+                if (valor < 0) {
+                    System.out.println("El valor no puede ser negativo. Intente nuevamente.");
+                    continue;
+                }
+                return valor;
+            } catch (NumberFormatException e) {
+                System.out.println("Valor inválido. Intente nuevamente o deje vacío para omitir.");
+            }
         }
     }
 
-    private static String leerOpcional(String mensaje) {
-        System.out.print(mensaje);
-        String value = scanner.nextLine().trim();
-        return value.isBlank() ? null : value;
+    private static String leerFechaOpcional(String mensaje) {
+        while (true) {
+            System.out.print(mensaje);
+            String input = scanner.nextLine().trim();
+            if (input.isBlank()) {
+                return "";
+            }
+            try {
+                ArgentinaTimeZone.parsear(input);
+                return input;
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private static String leerFechaFinPosterior(String mensaje, String inicioStr) {
+        LocalDateTime inicio = null;
+        if (inicioStr != null && !inicioStr.isBlank()) {
+            try {
+                inicio = ArgentinaTimeZone.aLocalDateTime(ArgentinaTimeZone.parsear(inicioStr));
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+                inicioStr = leerFechaOpcional("Inicio (yyyy-MM-dd HH:mm, hora Argentina) o vacío: ");
+                return leerFechaFinPosterior(mensaje, inicioStr);
+            }
+        }
+        while (true) {
+            System.out.print(mensaje);
+            String finStr = scanner.nextLine().trim();
+            if (finStr.isBlank()) {
+                return "";
+            }
+            try {
+                LocalDateTime fin = ArgentinaTimeZone.aLocalDateTime(ArgentinaTimeZone.parsear(finStr));
+                if (inicio != null && !fin.isAfter(inicio)) {
+                    System.out.println("Error: la fecha de fin debe ser posterior a la fecha de inicio. Intente nuevamente.");
+                    continue;
+                }
+                return finStr;
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private static String leerFechaRequerida(String mensaje) {
+        while (true) {
+            System.out.print(mensaje);
+            String input = scanner.nextLine().trim();
+            if (input.isBlank()) {
+                System.out.println("La fecha es requerida. Intente nuevamente.");
+                continue;
+            }
+            try {
+                ArgentinaTimeZone.parsear(input);
+                return input;
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private static String leerFechaFinReprogramacion(String mensaje, String inicioStr) {
+        LocalDateTime inicio = ArgentinaTimeZone.aLocalDateTime(ArgentinaTimeZone.parsear(inicioStr));
+        while (true) {
+            System.out.print(mensaje);
+            String finStr = scanner.nextLine().trim();
+            if (finStr.isBlank()) {
+                System.out.println("La fecha de fin es requerida. Intente nuevamente.");
+                continue;
+            }
+            try {
+                LocalDateTime fin = ArgentinaTimeZone.aLocalDateTime(ArgentinaTimeZone.parsear(finStr));
+                if (!fin.isAfter(inicio)) {
+                    System.out.println("Error: la fecha de fin debe ser posterior a la fecha de inicio. Intente nuevamente.");
+                    continue;
+                }
+                return finStr;
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
     }
 
     private static String seleccionarEquipoNumerico() {
@@ -988,7 +1156,7 @@ public class Main {
         }
     }
 
-    private static Integer seleccionarRangoOpcional(String mensaje, boolean devolverMaximo) {
+    private static Integer seleccionarRangoMinimo(String mensaje) {
         var rangos = StateRangos.disponibles();
         System.out.println("Rangos disponibles:");
         for (int i = 0; i < rangos.size(); i++) {
@@ -1003,7 +1171,32 @@ public class Main {
             }
             if (opcion >= 1 && opcion <= rangos.size()) {
                 StateRangos rango = rangos.get(opcion - 1);
-                return devolverMaximo ? rango.getMaximo() : rango.getMinimo();
+                return rango.getMinimo();
+            }
+            System.out.println("Opción inválida. Intente nuevamente.");
+        }
+    }
+
+    private static Integer seleccionarRangoMaximo(String mensaje, Integer rangoMinimoSeleccionado) {
+        var rangos = StateRangos.disponibles();
+        System.out.println("Rangos disponibles:");
+        for (int i = 0; i < rangos.size(); i++) {
+            StateRangos rango = rangos.get(i);
+            System.out.println((i + 1) + ". " + rango.getNombre() + " (" + rango.getMinimo() + " - " + rango.getMaximo() + ")");
+        }
+        System.out.println("0. Cualquiera");
+        while (true) {
+            int opcion = leerEnteroConMensaje(mensaje);
+            if (opcion == 0) {
+                return null;
+            }
+            if (opcion >= 1 && opcion <= rangos.size()) {
+                StateRangos rango = rangos.get(opcion - 1);
+                if (rangoMinimoSeleccionado != null && rango.getMaximo() < rangoMinimoSeleccionado) {
+                    System.out.println("El rango máximo debe ser mayor o igual al rango mínimo seleccionado (" + rangoMinimoSeleccionado + "). Intente nuevamente.");
+                    continue;
+                }
+                return rango.getMaximo();
             }
             System.out.println("Opción inválida. Intente nuevamente.");
         }

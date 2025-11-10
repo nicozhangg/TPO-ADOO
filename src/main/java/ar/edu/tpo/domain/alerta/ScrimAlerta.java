@@ -9,14 +9,17 @@ public class ScrimAlerta {
     private final Integer rangoMax;
     private final Integer latenciaMax;
     private final String formato;
+    private final String modalidad;
 
-    public ScrimAlerta(String juego, String region, Integer rangoMin, Integer rangoMax, Integer latenciaMax, String formato) {
+    public ScrimAlerta(String juego, String region, Integer rangoMin, Integer rangoMax,
+                       Integer latenciaMax, String formato, String modalidad) {
         this.juego = juego != null ? juego.trim() : null;
         this.region = region != null ? region.trim() : null;
         this.rangoMin = rangoMin;
         this.rangoMax = rangoMax;
         this.latenciaMax = latenciaMax;
         this.formato = formato != null ? formato.trim() : null;
+        this.modalidad = modalidad != null ? modalidad.trim() : null;
     }
 
     public String getJuego() {
@@ -42,6 +45,9 @@ public class ScrimAlerta {
     public String getFormato() {
         return formato;
     }
+    public String getModalidad() {
+        return modalidad;
+    }
 
     @Override
     public String toString() {
@@ -52,6 +58,7 @@ public class ScrimAlerta {
                 ", rangoMax=" + rangoMax +
                 ", latenciaMax=" + latenciaMax +
                 ", formato='" + formato + '\'' +
+                ", modalidad='" + modalidad + '\'' +
                 '}';
     }
 
@@ -65,12 +72,13 @@ public class ScrimAlerta {
                 Objects.equals(rangoMin, that.rangoMin) &&
                 Objects.equals(rangoMax, that.rangoMax) &&
                 Objects.equals(latenciaMax, that.latenciaMax) &&
-                Objects.equals(formato, that.formato);
+                Objects.equals(formato, that.formato) &&
+                Objects.equals(modalidad, that.modalidad);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(juego, region, rangoMin, rangoMax, latenciaMax, formato);
+        return Objects.hash(juego, region, rangoMin, rangoMax, latenciaMax, formato, modalidad);
     }
 }
 

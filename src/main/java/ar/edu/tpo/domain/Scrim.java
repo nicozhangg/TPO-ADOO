@@ -115,6 +115,7 @@ public class Scrim {
     // ===== Métodos públicos para que los estados modifiquen el scrim =====
     // (públicos porque los estados están en un subpaquete)
     public void agregarJugadorAEquipoDirecto(String email, String nombreEquipo){
+        waitlist.quitar(email);
         equipos.agregarJugadorAEquipo(email, nombreEquipo);
     }
 

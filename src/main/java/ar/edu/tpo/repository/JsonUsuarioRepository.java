@@ -151,6 +151,9 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                     if (alerta.getFormato() != null && !alerta.getFormato().isBlank()) {
                         alertaJson.addProperty("formato", alerta.getFormato());
                     }
+                    if (alerta.getModalidad() != null && !alerta.getModalidad().isBlank()) {
+                        alertaJson.addProperty("modalidad", alerta.getModalidad());
+                    }
                     alertasJson.add(alertaJson);
                 });
                 data.add("alertasScrim", alertasJson);
@@ -360,7 +363,8 @@ public class JsonUsuarioRepository implements UsuarioRepository {
                 Integer latenciaMax = alertaJson.has("latenciaMax") && !alertaJson.get("latenciaMax").isJsonNull()
                         ? alertaJson.get("latenciaMax").getAsInt() : null;
                 String formato = stringOrNull(alertaJson, "formato");
-                alertas.add(new ScrimAlerta(juego, region, rangoMin, rangoMax, latenciaMax, formato));
+                String modalidad = stringOrNull(alertaJson, "modalidad");
+                alertas.add(new ScrimAlerta(juego, region, rangoMin, rangoMax, latenciaMax, formato, modalidad));
             }
         }
         return alertas;
