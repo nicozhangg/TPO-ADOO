@@ -11,9 +11,12 @@ import ar.edu.tpo.domain.alerta.ScrimAlerta;
 import ar.edu.tpo.domain.rangos.StateRangos;
 import ar.edu.tpo.domain.regiones.StateRegion;
 import ar.edu.tpo.domain.roles.StateRoles;
+import ar.edu.tpo.notification.LoggingNotificacionDecorator;
 import ar.edu.tpo.notification.MailStrategy;
 import ar.edu.tpo.notification.Notificador;
+import ar.edu.tpo.notification.NotificacionStrategy;
 import ar.edu.tpo.notification.NotificationService;
+import ar.edu.tpo.notification.RespaldoNotificacionDecorator;
 import ar.edu.tpo.repository.JsonScrimRepository;
 import ar.edu.tpo.repository.JsonUsuarioRepository;
 import ar.edu.tpo.service.ConductaService;
@@ -66,7 +69,12 @@ public class Main {
             System.err.println("[mail] Puerto SMTP inválido (" + smtpPort + "). Se usará envío simulado.");
             mailStrategy = MailStrategy.consola(defaultRemitente);
         }
-        Notificador notificador = new Notificador(mailStrategy);
+        NotificacionStrategy estrategiaNotificacion = mailStrategy;
+        NotificacionStrategy fallbackConsola = MailStrategy.consola(defaultRemitente);
+        estrategiaNotificacion = new RespaldoNotificacionDecorator(estrategiaNotificacion, fallbackConsola);
+        estrategiaNotificacion = new LoggingNotificacionDecorator(estrategiaNotificacion);
+
+        Notificador notificador = new Notificador(estrategiaNotificacion);
         NotificationService notificationService = new NotificationService(notificador);
 
         usuarioService = new UsuarioService(usuarioRepo, notificationService);
