@@ -98,11 +98,12 @@ public class ScrimSchedulerService {
     /**
      * Procesa las transiciones automáticas:
      * - CONFIRMADO → EN_JUEGO (cuando llega la fecha/hora de inicio)
-     * NOTA: EN_JUEGO → FINALIZADO debe ser manual (no automático por scheduler)
+     * - EN_JUEGO   → FINALIZADO (cuando llega la fecha/hora de fin)
      */
     private void procesarTransiciones() {
         // Usar hora actual de Argentina
         ZonedDateTime ahoraArgentina = ArgentinaTimeZone.ahora();
+        ZonedDateTime ahoraTruncado = ahoraArgentina.truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
 
         try {
             for (Scrim scrim : repo.listar()) {
@@ -110,13 +111,9 @@ public class ScrimSchedulerService {
                 LocalDateTime inicio = scrim.getInicio();
 
                 // CONFIRMADO → EN_JUEGO: cuando la fecha de inicio ya pasó completamente (comparando en zona Argentina)
-                // Usamos isBefore con negación para asegurar que la hora de inicio YA pasó
                 if (estado instanceof ar.edu.tpo.domain.estado.ConfirmadoState && inicio != null) {
                     ZonedDateTime inicioArgentina = ArgentinaTimeZone.aZonaArgentina(inicio);
                     if (inicioArgentina != null) {
-                        // Verificar que la hora actual es después o igual a la hora de inicio
-                        // Usamos truncar a minutos para comparar solo hasta el minuto, no segundos
-                        ZonedDateTime ahoraTruncado = ahoraArgentina.truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
                         ZonedDateTime inicioTruncado = inicioArgentina.truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
                         
                         if (ahoraTruncado.isAfter(inicioTruncado) || ahoraTruncado.isEqual(inicioTruncado)) {
@@ -137,7 +134,28 @@ public class ScrimSchedulerService {
                     }
                 }
 
-                // EN_JUEGO → FINALIZADO: Solo manual (removido del scheduler automático)
+                // EN_JUEGO → FINALIZADO: cuando la hora de fin ya pasó
+                LocalDateTime fin = scrim.getFin();
+                if (estado instanceof ar.edu.tpo.domain.estado.EnJuegoState && fin != null) {
+                    ZonedDateTime finArgentina = ArgentinaTimeZone.aZonaArgentina(fin);
+                    if (finArgentina != null) {
+                        ZonedDateTime finTruncado = finArgentina.truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
+                        if (ahoraTruncado.isAfter(finTruncado) || ahoraTruncado.isEqual(finTruncado)) {
+                            try {
+                                lifecycleService.finalizarScrim(scrim.getId());
+                                System.out.println("[scheduler] Scrim finalizado automáticamente: " + scrim.getId() +
+                                        " (fin programado: " + finTruncado + ", hora actual: " + ahoraTruncado + ")");
+                            } catch (Exception e) {
+                                System.err.println("[scheduler] Error al finalizar scrim " + scrim.getId() + ": " + e.getMessage());
+                            }
+                        } else {
+                            long minutosRestantes = java.time.temporal.ChronoUnit.MINUTES.between(ahoraTruncado, finTruncado);
+                            if (minutosRestantes <= 5 && minutosRestantes > 0) {
+                                System.out.println("[scheduler] Scrim " + scrim.getId() + " finalizará en " + minutosRestantes + " minutos");
+                            }
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
             System.err.println("[scheduler] Error en procesamiento de transiciones: " + e.getMessage());

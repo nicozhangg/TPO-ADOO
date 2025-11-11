@@ -99,19 +99,17 @@
   },
   "lp366841@gmail.com": {
     "tipo": "Jugador",
-    "nombre": "Lucas Pereira",
+    "nombre": "Nico",
     "id": "6",
     "email": "lp366841@gmail.com",
     "passwordHash": "123",
-    "mmr": 800,
-    "latenciaMs": 5,
-    "rango": "Plata",
+    "mmr": 1600,
+    "latenciaMs": 12,
+    "rango": "Diamante",
     "rolPreferido": "Iniciador",
     "region": "America",
     "sancionesActivas": [],
-    "scrimsFavoritas": [
-      "2"
-    ],
+    "scrimsFavoritas": [],
     "alertasScrim": [],
     "strikeCount": 0,
     "suspendido": false
