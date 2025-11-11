@@ -72,7 +72,17 @@ public class ScrimController {
     // ================== LISTAR ==================
     public void listar(){ 
         // Permitido para todos los tipos de usuarios
-        lifecycleService.listarScrims().forEach(scrim -> System.out.println(formatearResumen(scrim)));
+        lifecycleService.listarScrims()
+                .forEach(scrim -> System.out.println(formatearResumenConEstado(scrim)));
+    }
+
+    private String formatearResumenConEstado(Scrim scrim) {
+        String inicio = scrim.getInicio() != null ? scrim.getInicio().toString() : "sin inicio";
+        String fin = scrim.getFin() != null ? scrim.getFin().toString() : "sin fin";
+        return formatearResumen(scrim)
+                + " | Estado: " + scrim.getEstado().getNombre()
+                + " | Inicio: " + inicio
+                + " | Fin: " + fin;
     }
 
     // ================== LOBBY ===================

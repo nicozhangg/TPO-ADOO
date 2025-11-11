@@ -3,36 +3,30 @@
     "id": "1",
     "juego": "Valorant",
     "emailCreador": "a@a.com",
-    "rangoMin": 100,
-    "rangoMax": 30000,
-    "cupo": 1,
-    "formato": "1v1",
+    "rangoMin": 1000,
+    "rangoMax": 2000,
+    "cupo": 5,
+    "formato": "5v5",
     "region": "America",
-    "latenciaMaxMs": 25,
+    "latenciaMaxMs": 60,
     "modalidad": "ranked-like",
     "estado": "BUSCANDO_JUGADORES",
-    "inicio": "2025-11-10T22:43",
-    "fin": "2025-11-10T23:00",
+    "inicio": "2025-11-12T18:00",
+    "fin": "2025-11-12T19:30",
     "equipo1": {
       "nombre": "Equipo 1",
       "jugadores": []
     },
     "equipo2": {
       "nombre": "Equipo 2",
-      "jugadores": [
-        "e@e.com"
-      ]
+      "jugadores": []
     },
-    "jugadores": [
-      "e@e.com"
-    ],
+    "jugadores": [],
     "confirmacionesEquipos": {
       "Equipo 1": false,
       "Equipo 2": false
     },
-    "confirmaciones": {
-      "e@e.com": false
-    },
+    "confirmaciones": {},
     "estadisticas": [],
     "listaEspera": []
   },
@@ -40,40 +34,71 @@
     "id": "2",
     "juego": "Valorant",
     "emailCreador": "a@a.com",
-    "rangoMin": 100,
-    "rangoMax": 2000,
+    "rangoMin": 500,
+    "rangoMax": 1600,
     "cupo": 1,
     "formato": "1v1",
     "region": "America",
-    "latenciaMaxMs": 50,
-    "modalidad": "ranked-like",
+    "latenciaMaxMs": 45,
+    "modalidad": "casual",
     "estado": "FINALIZADO",
-    "inicio": "2025-11-10T19:35",
-    "fin": "2025-11-10T22:50",
+    "inicio": "2025-11-09T21:00",
+    "fin": "2025-11-09T21:45",
     "equipo1": {
       "nombre": "Equipo 1",
       "jugadores": [
-        "b@b.com"
+        "zhangnicolas0@gmail.com"
       ]
     },
     "equipo2": {
       "nombre": "Equipo 2",
       "jugadores": [
-        "e@e.com"
+        "ivoignaciodanko@gmail.com"
       ]
     },
     "jugadores": [
-      "b@b.com",
-      "e@e.com"
+      "zhangnicolas0@gmail.com",
+      "ivoignaciodanko@gmail.com"
     ],
     "confirmacionesEquipos": {
       "Equipo 1": true,
       "Equipo 2": true
     },
     "confirmaciones": {
-      "b@b.com": true,
-      "e@e.com": true
+      "zhangnicolas0@gmail.com": true,
+      "ivoignaciodanko@gmail.com": true
     },
+    "estadisticas": [],
+    "listaEspera": []
+  },
+  "3": {
+    "id": "3",
+    "juego": "Valorant",
+    "emailCreador": "a@a.com",
+    "rangoMin": 0,
+    "rangoMax": 1800,
+    "cupo": 3,
+    "formato": "3v3",
+    "region": "America",
+    "latenciaMaxMs": 50,
+    "modalidad": "ranked-like",
+    "estado": "BUSCANDO_JUGADORES",
+    "inicio": "2025-11-11T09:00",
+    "fin": "2025-11-11T09:30",
+    "equipo1": {
+      "nombre": "Equipo 1",
+      "jugadores": []
+    },
+    "equipo2": {
+      "nombre": "Equipo 2",
+      "jugadores": []
+    },
+    "jugadores": [],
+    "confirmacionesEquipos": {
+      "Equipo 1": false,
+      "Equipo 2": false
+    },
+    "confirmaciones": {},
     "estadisticas": [],
     "listaEspera": []
   }
